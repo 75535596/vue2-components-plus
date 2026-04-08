@@ -5,12 +5,12 @@ import 'element-ui/lib/theme-chalk/index.css'
 import App from './App.vue'
 
 // 本地模式
-// import NsComponents from 'packages/index'
-// import 'packages/assets/main.css'
+import NsComponents from 'packages/index'
+import 'packages/assets/main.css'
 
 // npm包模式
-import NsComponents from 'vue2-components-plus'
-import 'vue2-components-plus/dist/vue2-components-plus.css'
+// import NsComponents from 'vue2-components-plus'
+// import 'vue2-components-plus/dist/vue2-components-plus.css'
 
 Vue.config.productionTip = false
 
