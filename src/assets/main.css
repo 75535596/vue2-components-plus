@@ -1,0 +1,6 @@
+@import './base.css';
+@import './theme.css';
+
+.ns-dialog-plus-modal {
+  background-color: rgba(0, 0, 0, 0.45);
+}

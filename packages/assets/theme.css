@@ -1,0 +1,20 @@
+:root {
+  --matrix-form-title-width: 18px;
+  --matrix-form-title-height: 18px;
+  --matrix-form-title-gap: 8px;
+  --matrix-form-title-color: #303133;
+  --matrix-form-title-margin-bottom: 12px;
+  --matrix-form-title-content-padding: 0;
+  --matrix-form-title-icon: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
+  /* --matrix-form-title-icon: url(./assets/imgs/icon-detail-title.png); */
+
+  --matrix-dialog-bk-color: #ffffff;
+  --matrix-dialog-border-radius: 8px;
+  --matrix-dialog-box-shadow: 0 12px 32px rgba(31, 35, 41, 0.12);
+  --matrix-dialog-header-bg-color: #f5f7fa;
+  --matrix-dialog-header-text-color: #303133;
+  --matrix-dialog-header-height: 54px;
+  --matrix-dialog-padding-top-bottom: 16px;
+  --matrix-dialog-padding-left-right: 20px;
+  --matrix-dialog-footer-gap: 12px;
+}
