@@ -4,17 +4,44 @@ import '../../assets/main.css'
 
 const dialogInstances = typeof window !== 'undefined' ? (window.__dialogInstances = window.__dialogInstances || []) : []
 let externalVue = Vue
+let externalStore = null
+let externalPinia = null
 let dialogSeed = 0
 
-export function setExternalApp(app) {
-  if (!app) return
+function resolveContextValue(primaryValue, fallbackValues = []) {
+  if (primaryValue) {
+    return primaryValue
+  }
+  return fallbackValues.find(Boolean) || null
+}
+
+function resolveVueConstructor(app) {
+  if (!app) return null
   if (app.extend) {
-    externalVue = app
-    return
+    return app
   }
   if (app.constructor && app.constructor.extend) {
-    externalVue = app.constructor
+    return app.constructor
   }
+  return null
+}
+
+function resolveStore(app, options = {}) {
+  return resolveContextValue(options.store, [app && app.$store, app && app.$options && app.$options.store, app && app.store, externalStore])
+}
+
+function resolvePinia(app, options = {}) {
+  return resolveContextValue(options.pinia, [app && app.$pinia, app && app.$options && app.$options.pinia, app && app.pinia, externalPinia])
+}
+
+export function setExternalApp(app, options = {}) {
+  if (!app) return
+  const resolvedVue = resolveVueConstructor(app)
+  if (resolvedVue) {
+    externalVue = resolvedVue
+  }
+  externalStore = resolveStore(app, options)
+  externalPinia = resolvePinia(app, options)
 }
 
 function resolveMountTarget(selector) {
@@ -49,14 +76,19 @@ export function NsDialog(data, modal = true, appendTo = '#app') {
     return false
   }
 
-  const id = data.id || `ns-dialog-${Date.now()}-${dialogSeed++}`
+  const callerVm = this && this._isVue ? this : null
+  const { store: dataStore, pinia: dataPinia, ...dialogData } = data
+  const store = resolveStore(callerVm, { store: dataStore })
+  const pinia = resolvePinia(callerVm, { pinia: dataPinia })
+
+  const id = dialogData.id || `ns-dialog-${Date.now()}-${dialogSeed++}`
   const container = document.createElement('div')
   container.id = id
   mountTarget.appendChild(container)
 
   const instance = {
     id,
-    class: data.class || '',
+    class: dialogData.class || '',
     element: container,
     vm: null,
     domRef: null,
@@ -67,20 +99,21 @@ export function NsDialog(data, modal = true, appendTo = '#app') {
 
   const DialogConstructor = (externalVue || Vue).extend(NsDialogComponent)
   const propsData = {
-    ...data,
-    className: data.class || '',
+    ...dialogData,
+    className: dialogData.class || '',
     modal,
+    footerButtonReverse:true,
     containerId: id,
     dialogInstance: instance,
     close: () => {
-      if (typeof data.close === 'function') {
-        data.close()
+      if (typeof dialogData.close === 'function') {
+        dialogData.close()
       }
     },
     closed: () => {
       try {
-        if (typeof data.closed === 'function') {
-          data.closed()
+        if (typeof dialogData.closed === 'function') {
+          dialogData.closed()
         }
       } finally {
         if (instance.vm) {
@@ -94,7 +127,15 @@ export function NsDialog(data, modal = true, appendTo = '#app') {
     },
   }
 
-  const vm = new DialogConstructor({ propsData })
+  const vmOptions = { propsData }
+  if (store) {
+    vmOptions.store = store
+  }
+  if (pinia) {
+    vmOptions.pinia = pinia
+  }
+
+  const vm = new DialogConstructor(vmOptions)
   instance.vm = vm
   instance.close = () => {
     if (vm && typeof vm.closeDialog === 'function') {

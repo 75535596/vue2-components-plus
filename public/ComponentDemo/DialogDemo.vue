@@ -108,7 +108,7 @@ export default {
           },
           width: config.width || '960px',
           height: config.height || '620px',
-          dialogPadding: [0, 0],
+          dialogPadding: [10, 10],
           modal: config.modal !== undefined ? config.modal : false,
           draggable: true,
           x: 120 + offset,

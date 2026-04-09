@@ -52,7 +52,15 @@ Vue.use(ElementUI)
 //@ts-ignore
 import NsComponents from 'vue2-components-plus'
 import 'vue2-components-plus/dist/vue2-components-plus.css'
-Vue.use(NsComponents)
+
+// Vuex 项目
+import store from './store'
+Vue.use(NsComponents, { store })
+
+// Pinia 项目
+import { createPinia } from 'pinia'
+const pinia = createPinia()
+Vue.use(NsComponents, { pinia })
 ```
 
 ## 📋 组件列表

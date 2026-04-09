@@ -46,8 +46,9 @@
         v-on="mergeEvents(footerEvents)"
       />
       <template v-else>
+        <el-button v-if="footerButtonReverse" type="primary" :loading="footerLoading" @click="dealConfirm">{{ footerButtonText.confirm }}</el-button>
         <el-button @click="closeDialog">{{ footerButtonText.close }}</el-button>
-        <el-button type="primary" :loading="footerLoading" @click="dealConfirm">{{ footerButtonText.confirm }}</el-button>
+        <el-button v-if="!footerButtonReverse" type="primary" :loading="footerLoading" @click="dealConfirm">{{ footerButtonText.confirm }}</el-button>
       </template>
     </div>
   </el-dialog>
@@ -142,6 +143,10 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    footerButtonReverse: {
+      type: Boolean,
+      default: false,
+    },
     immediately: {
       type: Boolean,
       default: false,
@@ -210,13 +215,23 @@ export default {
     },
     bodyStyle() {
       const padding = this.resolvePadding()
+      if (!this.currentHeight) {
+        return {
+          padding,
+          minHeight: 'auto',
+          maxHeight: 'none',
+          overflow: 'auto',
+        }
+      }
       return {
         padding,
-        minHeight: this.currentHeight ? this.normalizeSize(this.currentHeight) : 'auto',
-        maxHeight: this.currentHeight ? this.normalizeSize(this.currentHeight) : 'none',
+        height: '100%',
+        minHeight: 0,
         overflow: 'auto',
+        flex: '1 1 auto',
       }
     },
+
     dialogCustomClass() {
       return ['ns-dialog-plus', this.className, this.hasAbsolutePosition ? 'ns-dialog-plus--absolute' : '']
         .filter(Boolean)
@@ -563,6 +578,8 @@ export default {
 
 .ns-dialog-plus__body {
   min-height: 60px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .ns-dialog-plus__footer {
@@ -577,6 +594,11 @@ export default {
   box-shadow: var(--matrix-dialog-box-shadow);
 }
 
+::v-deep .ns-dialog-plus .el-dialog__header,
+::v-deep .ns-dialog-plus .el-dialog__footer {
+  flex: 0 0 auto;
+}
+
 ::v-deep .ns-dialog-plus .el-dialog__header {
   padding: 0 20px;
   background: var(--matrix-dialog-header-bg-color);
@@ -584,5 +606,9 @@ export default {
 
 ::v-deep .ns-dialog-plus .el-dialog__body {
   padding: 0;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 </style>

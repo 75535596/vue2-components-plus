@@ -22,7 +22,7 @@ import { NsDialog, setExternalApp, closeAllNsDialog } from './components/NsDialo
 
 const components = [NsForm, NsFormTitle, NsTableContainer, NsSearch, NsTable]
 
-export function install(Vue) {
+export function install(Vue, options = {}) {
   if (install.installed) return
   install.installed = true
 
@@ -33,8 +33,9 @@ export function install(Vue) {
     }
   })
 
-  setExternalApp(Vue)
+  setExternalApp(Vue, options)
   loadCssVars()
+
 
   if (Vue && Vue.prototype) {
     Vue.prototype.$NsDialog = NsDialog
