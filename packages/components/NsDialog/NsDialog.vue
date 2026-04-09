@@ -528,7 +528,7 @@ export default {
       }
     },
     handleDragStart(event) {
-      if (!this.draggable || this.showMaximizeButton || event.button !== 0) {
+      if (!this.draggable || event.button !== 0) {
         return
       }
       const dialog = this.resolveDialogElement()
