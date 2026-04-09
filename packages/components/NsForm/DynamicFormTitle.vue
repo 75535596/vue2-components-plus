@@ -50,7 +50,7 @@ export default {
   width: var(--matrix-form-title-width);
   height: var(--matrix-form-title-height);
   border-radius: 4px;
-  background: var(--matrix-form-title-icon);
+  background: var(--matrix-form-title-icon) no-repeat center center / 100% auto;
 }
 
 .ns-form-title__text {

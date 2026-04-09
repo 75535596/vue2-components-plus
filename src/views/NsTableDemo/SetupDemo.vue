@@ -3,10 +3,7 @@
     <el-card shadow="never" class="table-demo__mode-card">
       <div class="table-demo__mode-header">
         <div>
-          <div class="table-demo__mode-title">分页模式演示</div>
-          <div class="table-demo__mode-tip">
-            当前共 {{ mockUserCount }} 条模拟数据，当前为{{ paginationMode === 'frontend' ? '前端分页' : '后端分页' }}模式。
-          </div>
+          <div class="table-demo__mode-title">分页模式演示（&lt;script setup&gt; 版）</div>
           <div class="table-demo__mode-desc">
             {{ paginationMode === 'frontend' ? '一次加载全部筛选结果，再在本地完成翻页。' : '每次切页都会按当前页码重新请求模拟数据。' }}
           </div>
@@ -73,13 +70,11 @@
         <el-button @click="checkSelection">检查选择状态</el-button>
       </div>
     </el-card>
-
   </div>
 </template>
 
-<script lang="ts">
-
-
+<script setup lang="ts">
+import { computed, getCurrentInstance, nextTick, onMounted, ref } from 'vue'
 import { departmentOptions, fetchDepartmentOptions, fetchStatusOptions, filterUsers, mockUsers } from './mockData'
 
 function createSearchItems() {
@@ -99,7 +94,6 @@ function createSearchItems() {
           value: String(index + 1),
         }
       }),
-
     },
     {
       prop: 'username',
@@ -212,7 +206,7 @@ function createColumns(context) {
           prop: 'username',
           label: '用户名',
           width: 130,
-          formatter: function (row, column, cellValue) {
+          formatter: function (row, _column, cellValue) {
             return cellValue ? '@' + cellValue : '-'
           },
         },
@@ -300,197 +294,203 @@ function createColumns(context) {
   ]
 }
 
-export default {
-  name: 'NsTableDemo',
-  data() {
-    return {
-      loading: false,
-      total: 0,
-      tableData: [],
-      searchParams: {},
-      paginationMode: 'backend',
-      mockUserCount: mockUsers.length,
-      externalSearchParams: {
-        source: 'vue2-demo',
-      },
-      searchProps: {
-        labelWidth: '90px',
-      },
-      searchItems: createSearchItems(),
-      columns: [],
-    }
-  },
-  computed: {
-    mergedTableProps() {
-      return {
-        showSelection: true,
-        showIndex: true,
-        loading: this.loading,
-        rowKey: 'id',
-        showPagination: true,
-        pageSizes: [5, 10, 20],
-        stripe: true,
-      }
-    },
-  },
-  created() {
-    this.columns = createColumns(this)
-    this.searchItems[1].events.keyup = this.handleKeywordEnter
-  },
-  async mounted() {
-    const statusOptions = await fetchStatusOptions()
-    const departmentList = await fetchDepartmentOptions()
-    this.searchItems[3].children = statusOptions
-    this.searchItems[4].children = departmentList
-    this.$nextTick(() => {
-      if (this.$refs.containerRef) {
-        this.$refs.containerRef.initSearchAndLoad()
-      }
-    })
-  },
+const containerRef = ref()
+const loading = ref(false)
+const total = ref(0)
+const tableData = ref([])
+const searchParams = ref<Record<string, any>>({})
+const paginationMode = ref<'backend' | 'frontend'>('backend')
+const mockUserCount = mockUsers.length
+const externalSearchParams = { source: 'vue2-demo' }
+const searchProps = { labelWidth: '90px' }
+const searchItems = ref(createSearchItems())
+const columns = ref([])
+const { proxy } = getCurrentInstance() || {}
 
-  methods: {
-    handleKeywordEnter(event) {
-      if (event && event.key === 'Enter') {
-        this.handleSearch(this.$refs.containerRef ? this.$refs.containerRef.getSearchFormData() : {})
-      }
-    },
-    getStatusType(status) {
-      return status === 1 ? 'success' : 'danger'
-    },
-    getStatusText(status) {
-      return status === 1 ? '启用' : '禁用'
-    },
-    getDepartmentText(value) {
-      const matched = departmentOptions.find(function (item) {
-        return item.value === value
-      })
-      return matched ? matched.label : value
-    },
-    getCurrentPagination() {
-      return this.$refs.containerRef && this.$refs.containerRef.getPagination
-        ? this.$refs.containerRef.getPagination()
-        : { currentPage1: 1, pageSize1: 10 }
-    },
-    paginateList(list, pagination) {
-      const currentPage = Number(pagination.currentPage1 || 1)
-      const pageSize = Number(pagination.pageSize1 || 10)
-      const start = (currentPage - 1) * pageSize
-      return (list || []).slice(start, start + pageSize)
-    },
-    resetContainerPage() {
-      if (this.$refs.containerRef && this.$refs.containerRef.internalPagination) {
-        this.$refs.containerRef.internalPagination.currentPage = 1
-      }
-    },
-    handlePaginationModeChange() {
-      if (this.$refs.containerRef) {
-        this.$refs.containerRef.clearAllSelection()
-      }
-      this.resetContainerPage()
-      this.loadData()
-      this.$message.success('已切换为' + (this.paginationMode === 'frontend' ? '前端分页' : '后端分页'))
-    },
-    async loadData() {
-      this.loading = true
-      try {
-        await new Promise(function (resolve) {
-          setTimeout(resolve, 300)
-        })
-        const pagination = this.getCurrentPagination()
-        const pageConfig = {
-          pageNumberKey: 'currentPage1',
-          pageSizeKey: 'pageSize1',
-        }
-        if (this.paginationMode === 'frontend') {
-          const result = filterUsers(
-            mockUsers,
-            this.searchParams,
-            { currentPage1: 1, pageSize1: this.mockUserCount || 10 },
-            pageConfig,
-          )
-          this.tableData = this.paginateList(result.list, pagination)
-          this.total = result.total
-          return
-        }
-        const result = filterUsers(mockUsers, this.searchParams, pagination, pageConfig)
-        this.tableData = result.list
-        this.total = result.total
-      } catch {
-        this.$message.error('加载表格数据失败')
-      } finally {
+const mergedTableProps = computed(() => ({
+  showSelection: true,
+  showIndex: true,
+  loading: loading.value,
+  rowKey: 'id',
+  showPagination: true,
+  pageSizes: [5, 10, 20],
+  stripe: true,
+}))
 
-        this.loading = false
-      }
-    },
-    handleSearch(params) {
-      this.searchParams = Object.assign({}, params)
-      this.loadData()
-    },
-    handleReset() {
-      this.$message.info('搜索条件已重置')
-    },
-    handleSelectionChange(selection) {
-      if (selection && selection.length) {
-        this.$message.success('当前选中 ' + selection.length + ' 行')
-      }
-    },
-    getSelectedRows() {
-      const rows = this.$refs.containerRef ? this.$refs.containerRef.getSelectionRows() : []
-      this.$alert(JSON.stringify(rows, null, 2), '当前选中行', {
-        confirmButtonText: '知道了',
-      })
-    },
-    getSelectedKeys() {
-      const keys = this.$refs.containerRef ? this.$refs.containerRef.getSelectionKeys() : []
-      this.$message.success('当前选中 ID：' + (keys.length ? keys.join(', ') : '无'))
-    },
-    selectRows(ids) {
-      if (!this.$refs.containerRef) return
-      this.$refs.containerRef.setSelectionKeys(ids)
-      this.$message.success('已尝试选中 ID：' + ids.join(', '))
-    },
-    clearSelection() {
-      if (!this.$refs.containerRef) return
-      this.$refs.containerRef.clearAllSelection()
-      this.$message.success('已清空选中状态')
-    },
-    selectAll() {
-      if (!this.$refs.containerRef) return
-      this.$refs.containerRef.selectAll()
-      this.$message.success('已全选当前页')
-    },
-    checkSelection() {
-      if (!this.$refs.containerRef || !this.tableData.length) return
-      const firstSelected = this.$refs.containerRef.isRowSelected(this.tableData[0])
-      const keySelected = this.$refs.containerRef.isKeySelected(3)
-      this.$message.info('第一行选中：' + (firstSelected ? '是' : '否') + '；ID=3 选中：' + (keySelected ? '是' : '否'))
-    },
-    handleAdd() {
-      this.$message.success('点击了新增按钮')
-    },
-    handleView(row) {
-      this.$message.info('查看：' + row.username)
-    },
-    handleEdit(row) {
-      this.$message.success('编辑：' + row.username)
-    },
-    handleDelete(row) {
-      if (row.status === 0) {
-        this.$message.warning('禁用状态用户不可删除')
-        return
-      }
-      this.$confirm('确认删除用户“' + row.username + '”吗？', '提示', {
-        type: 'warning',
-      })
-        .then(() => {
-          this.$message.success('已模拟删除：' + row.username)
-          this.loadData()
-        })
-        .catch(function () {})
-    },
-  },
+function handleKeywordEnter(event: KeyboardEvent) {
+  if (event && event.key === 'Enter') {
+    handleSearch(containerRef.value ? containerRef.value.getSearchFormData() : {})
+  }
 }
+
+function getStatusType(status: number) {
+  return status === 1 ? 'success' : 'danger'
+}
+
+function getStatusText(status: number) {
+  return status === 1 ? '启用' : '禁用'
+}
+
+function getDepartmentText(value: string) {
+  const matched = departmentOptions.find(function (item) {
+    return item.value === value
+  })
+  return matched ? matched.label : value
+}
+
+function getCurrentPagination() {
+  return containerRef.value && containerRef.value.getPagination
+    ? containerRef.value.getPagination()
+    : { currentPage1: 1, pageSize1: 10 }
+}
+
+function paginateList(list: any[], pagination: any) {
+  const currentPage = Number(pagination.currentPage1 || 1)
+  const pageSize = Number(pagination.pageSize1 || 10)
+  const start = (currentPage - 1) * pageSize
+  return (list || []).slice(start, start + pageSize)
+}
+
+function resetContainerPage() {
+  if (containerRef.value && containerRef.value.internalPagination) {
+    containerRef.value.internalPagination.currentPage = 1
+  }
+}
+
+function handlePaginationModeChange() {
+  if (containerRef.value) {
+    containerRef.value.clearAllSelection()
+  }
+  resetContainerPage()
+  loadData()
+  proxy?.$message?.success('已切换为' + (paginationMode.value === 'frontend' ? '前端分页' : '后端分页'))
+}
+
+async function loadData() {
+  loading.value = true
+  try {
+    await new Promise(function (resolve) {
+      setTimeout(resolve, 300)
+    })
+    const pagination = getCurrentPagination()
+    const pageConfig = {
+      pageNumberKey: 'currentPage1',
+      pageSizeKey: 'pageSize1',
+    }
+    if (paginationMode.value === 'frontend') {
+      const result = filterUsers(
+        mockUsers,
+        searchParams.value,
+        { currentPage1: 1, pageSize1: mockUserCount || 10 },
+        pageConfig,
+      )
+      tableData.value = paginateList(result.list, pagination)
+      total.value = result.total
+      return
+    }
+    const result = filterUsers(mockUsers, searchParams.value, pagination, pageConfig)
+    tableData.value = result.list
+    total.value = result.total
+  } catch (error) {
+    console.error(error)
+    proxy?.$message?.error('加载表格数据失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+function handleSearch(params: Record<string, any>) {
+  searchParams.value = Object.assign({}, params)
+  loadData()
+}
+
+function handleReset() {
+  proxy?.$message?.info('搜索条件已重置')
+}
+
+function handleSelectionChange(selection: any[]) {
+  if (selection && selection.length) {
+    proxy?.$message?.success('当前选中 ' + selection.length + ' 行')
+  }
+}
+
+function getSelectedRows() {
+  const rows = containerRef.value ? containerRef.value.getSelectionRows() : []
+  proxy?.$alert?.(JSON.stringify(rows, null, 2), '当前选中行', {
+    confirmButtonText: '知道了',
+  })
+}
+
+function getSelectedKeys() {
+  const keys = containerRef.value ? containerRef.value.getSelectionKeys() : []
+  proxy?.$message?.success('当前选中 ID：' + (keys.length ? keys.join(', ') : '无'))
+}
+
+function selectRows(ids: number[]) {
+  if (!containerRef.value) return
+  containerRef.value.setSelectionKeys(ids)
+  proxy?.$message?.success('已尝试选中 ID：' + ids.join(', '))
+}
+
+function clearSelection() {
+  if (!containerRef.value) return
+  containerRef.value.clearAllSelection()
+  proxy?.$message?.success('已清空选中状态')
+}
+
+function selectAll() {
+  if (!containerRef.value) return
+  containerRef.value.selectAll()
+  proxy?.$message?.success('已全选当前页')
+}
+
+function checkSelection() {
+  if (!containerRef.value || !tableData.value.length) return
+  const firstSelected = containerRef.value.isRowSelected(tableData.value[0])
+  const keySelected = containerRef.value.isKeySelected(3)
+  proxy?.$message?.info('第一行选中：' + (firstSelected ? '是' : '否') + '；ID=3 选中：' + (keySelected ? '是' : '否'))
+}
+
+function handleAdd() {
+  proxy?.$message?.success('点击了新增按钮')
+}
+
+function handleView(row: any) {
+  proxy?.$message?.info('查看：' + row.username)
+}
+
+function handleEdit(row: any) {
+  proxy?.$message?.success('编辑：' + row.username)
+}
+
+function handleDelete(row: any) {
+  if (row.status === 0) {
+    proxy?.$message?.warning('禁用状态用户不可删除')
+    return
+  }
+  proxy?.$confirm?.('确认删除用户“' + row.username + '”吗？', '提示', {
+    type: 'warning',
+  })
+    ?.then(() => {
+      proxy?.$message?.success('已模拟删除：' + row.username)
+      loadData()
+    })
+    ?.catch(function () {})
+}
+
+columns.value = createColumns({ handleView, handleEdit, handleDelete })
+searchItems.value[1].events.keyup = handleKeywordEnter
+
+onMounted(async () => {
+  const statusOptions = await fetchStatusOptions()
+  const departmentList = await fetchDepartmentOptions()
+  searchItems.value[3].children = statusOptions
+  searchItems.value[4].children = departmentList
+  await nextTick()
+  if (containerRef.value) {
+    containerRef.value.initSearchAndLoad()
+  }
+})
 </script>
 
 <style scoped>
@@ -536,4 +536,3 @@ export default {
   gap: 12px;
 }
 </style>
-

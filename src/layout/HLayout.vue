@@ -7,23 +7,26 @@
       </div>
 
       <el-menu :default-active="currentPath" class="demo-layout__menu" @select="handleSelect">
-        <el-menu-item index="/form">
+        <el-menu-item index="/form-setup">
           <i class="el-icon-edit-outline"></i>
-          <span slot="title">NsForm</span>
+          <span slot="title">NsForm（setup）</span>
         </el-menu-item>
-        <el-menu-item index="/table">
+        <el-menu-item index="/table-setup">
           <i class="el-icon-s-grid"></i>
-          <span slot="title">NsTable</span>
+          <span slot="title">NsTable（setup）</span>
         </el-menu-item>
-        <el-menu-item index="/dialog">
+        <el-menu-item index="/dialog-setup">
           <i class="el-icon-copy-document"></i>
-          <span slot="title">NsDialog</span>
+          <span slot="title">NsDialog（setup）</span>
         </el-menu-item>
         <el-menu-item index="/directives">
           <i class="el-icon-aim"></i>
           <span slot="title">指令示例</span>
         </el-menu-item>
+
       </el-menu>
+
+
 
     </el-aside>
 
@@ -42,30 +45,31 @@
 </template>
 
 <script>
-import DialogDemo from '@/views/DialogDemo.vue'
-import FormDemo from '@/views/FormDemo.vue'
-import NsTableDemo from '@/views/NsTableDemo/index.vue'
+import DialogSetupDemo from '@/views/DialogSetupDemo.vue'
+import FormSetupDemo from '@/views/FormSetupDemo.vue'
+import NsTableSetupDemo from '@/views/NsTableDemo/SetupDemo.vue'
 import DirectivesDemo from '@/views/DirectivesDemo.vue'
 
+
+
 const pageMap = {
-  '/form': {
-    title: 'NsForm 动态表单示例',
-    component: FormDemo,
+  '/form-setup': {
+    title: 'NsForm 动态表单示例（<script setup>）',
+    component: FormSetupDemo,
   },
-  '/table': {
-    title: 'NsTable 表格与搜索示例',
-    component: NsTableDemo,
+  '/table-setup': {
+    title: 'NsTable 表格与搜索示例（<script setup>）',
+    component: NsTableSetupDemo,
   },
-  '/dialog': {
-    title: 'NsDialog 弹窗示例',
-    component: DialogDemo,
+  '/dialog-setup': {
+    title: 'NsDialog 弹窗示例（<script setup>）',
+    component: DialogSetupDemo,
   },
   '/directives': {
     title: '指令示例（permission/length）',
     component: DirectivesDemo,
   },
 }
-
 
 export default {
   name: 'HLayout',
@@ -76,8 +80,9 @@ export default {
   },
   computed: {
     currentConfig() {
-      return pageMap[this.currentPath] || pageMap['/form']
+      return pageMap[this.currentPath] || pageMap['/form-setup']
     },
+
     currentTitle() {
       return this.currentConfig.title
     },
@@ -96,9 +101,10 @@ export default {
   },
   methods: {
     resolvePath() {
-      const hash = window.location.hash.replace(/^#/, '') || '/form'
-      return pageMap[hash] ? hash : '/form'
+      const hash = window.location.hash.replace(/^#/, '') || '/form-setup'
+      return pageMap[hash] ? hash : '/form-setup'
     },
+
     handleHashChange() {
       this.currentPath = this.resolvePath()
     },

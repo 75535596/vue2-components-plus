@@ -98,6 +98,7 @@ export default {
           title: config.title || 'NsDialog 示例',
           class: 'dialog-demo-instance',
           dom: FormDemo,
+          showMaximizeButton: true,
           option: {
             readOnly,
             insideDialog: true,
@@ -110,9 +111,18 @@ export default {
           height: config.height || '620px',
           dialogPadding: [10, 10],
           modal: config.modal !== undefined ? config.modal : false,
+          // 拖动
           draggable: true,
-          x: 120 + offset,
-          y: 80 + offset,
+          // 最大化方法
+          maxSize: () => ({
+            width: '100%',
+            height: '100%',
+            x: 0,
+            y: 0
+          }),
+          // 初始化位置
+          x: 'calc(50% - 480px)',
+          y: 'calc(50% - 310px)',
           domCompleted: (domRef) => {
             if (!config.silent && domRef && typeof domRef.showToast === 'function') {
               domRef.showToast('弹窗内容已加载完成')

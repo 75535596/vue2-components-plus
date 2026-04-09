@@ -3,8 +3,9 @@
     <el-card shadow="never" class="demo-card">
       <div slot="header" class="demo-card__header">
         <div>
-          <div class="demo-card__title">NsForm 动态表单预览</div>
-          <div class="demo-card__desc">覆盖校验、回填、只读、级联、上传和动态表单项等常见场景。</div>
+          <div class="demo-card__title">NsForm 动态表单预览（&lt;script setup&gt; 版）</div>
+          <div class="demo-card__desc">覆盖校验、回填、只读、级联、上传和动态表单项等常见场景，使用 &lt;script setup&gt; 写法。</div>
+
         </div>
         <el-tag size="small" :type="demoReadOnly ? 'info' : 'success'">
           {{ demoReadOnly ? '只读模式' : '编辑模式' }}
@@ -25,7 +26,7 @@
         <el-button @click="resetFormData()">重置表单</el-button>
         <el-button @click="toggleReadOnly">切换只读</el-button>
         <el-button @click="notifyInnerButton">触发自定义事件</el-button>
-        <el-button v-if="insideDialog" type="danger" plain @click="$emit('close')">从内容区关闭弹窗</el-button>
+        <el-button v-if="insideDialog" type="danger" plain @click="emit('close')">从内容区关闭弹窗</el-button>
       </div>
 
       <el-form ref="shellForm" :model="formState" label-position="top" class="shell-form">
@@ -116,7 +117,26 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { getCurrentInstance, nextTick, onMounted, reactive, ref, watch } from 'vue'
+
+const props = defineProps({
+  readOnly: {
+    type: Boolean,
+    default: false,
+  },
+  insideDialog: {
+    type: Boolean,
+    default: false,
+  },
+  hintText: {
+    type: String,
+    default: '',
+  },
+})
+
+const emit = defineEmits(['close', 'btnClick'])
+
 const CustomRegionEditor = {
   name: 'CustomRegionEditor',
   props: {
@@ -470,276 +490,287 @@ function createDetailData() {
   }
 }
 
-export default {
-  name: 'FormDemo',
-  props: {
-    readOnly: {
-      type: Boolean,
-      default: false,
-    },
-    insideDialog: {
-      type: Boolean,
-      default: false,
-    },
-    hintText: {
-      type: String,
-      default: '',
-    },
+const demoReadOnly = ref(props.readOnly)
+const outputText = ref('')
+const uploadFileList = ref([])
+const formState = reactive({
+  rows: createRows(),
+  rows2: createRows2(),
+  rows3: createRows3(),
+  rows4: createRows4(),
+  rowsUpload: createRowsUpload(),
+})
+
+const shellForm = ref(null)
+const row1Ref = ref(null)
+const row2Ref = ref(null)
+const row3Ref = ref(null)
+const row4Ref = ref(null)
+const rowUploadRef = ref(null)
+
+const { proxy } = getCurrentInstance()
+
+const getUploadField = () => formState.rowsUpload[0][0]
+const getFormRefs = () => [row1Ref.value, row2Ref.value, row3Ref.value, row4Ref.value, rowUploadRef.value].filter(Boolean)
+
+const syncUploadDisabled = () => {
+  const uploadField = getUploadField()
+  if (uploadField && uploadField.params) {
+    proxy?.$set(uploadField.params, 'disabled', demoReadOnly.value)
+  }
+}
+
+watch(
+  () => props.readOnly,
+  (value) => {
+    demoReadOnly.value = value
+    syncUploadDisabled()
   },
-  data() {
+  { immediate: true },
+)
+
+watch(demoReadOnly, () => {
+  syncUploadDisabled()
+})
+
+const bindFieldEvents = () => {
+  formState.rows[0][0].events.change = handleEnableChange
+  formState.rows3[1][0].events.change = detAreaModeChange
+
+  const uploadField = getUploadField()
+  uploadField.params.httpRequest = mockUploadRequest
+  uploadField.events = {
+    success: handleUploadSuccess,
+    change: handleUploadChange,
+    remove: handleUploadRemove,
+  }
+  syncUploadDisabled()
+}
+
+const setUploadSlots = () => {
+  const uploadField = getUploadField()
+  proxy?.$set(uploadField, 'slots', {
+    default: () =>
+      proxy?.$createElement('div', { class: 'upload-trigger' }, [
+        proxy.$createElement('i', { class: 'el-icon-upload upload-trigger__icon' }),
+        proxy.$createElement('div', { class: 'upload-trigger__title' }, '点击或拖拽文件到此处上传'),
+        proxy.$createElement('div', { class: 'upload-trigger__sub' }, '仅做本地模拟，不会真正请求后台'),
+      ]),
+    tip: () =>
+      proxy?.$createElement('div', { class: 'el-upload__tip' }, '支持 txt / md / json / jpg / png / pdf，最多 2 个文件'),
+  })
+}
+
+const toggleReadOnly = () => {
+  demoReadOnly.value = !demoReadOnly.value
+}
+
+const showToast = (message) => {
+  proxy?.$message?.info(message || '来自 FormDemo 的实例方法调用')
+  return true
+}
+
+const handleEnableChange = (value) => {
+  proxy?.$message?.info(value ? '已启用模型能力' : '已停用模型能力')
+}
+
+const ensureAbnormalField = (mode) => {
+  const lastRow = formState.rows3[formState.rows3.length - 1]
+  const lastKey = lastRow && lastRow[0] && lastRow[0].key
+  if (lastKey === 'det_area_json') {
+    formState.rows3.pop()
+  }
+  if (mode === 'abnormal') {
+    formState.rows3.push([
+      {
+        key: 'det_area_json',
+        label: '感兴趣区域',
+        value: '',
+        component: CustomRegionEditor,
+        span: 24,
+        params: {
+          rules: [{ required: true, message: '请输入感兴趣区域', trigger: 'blur' }],
+        },
+      },
+    ])
+  }
+}
+
+const detAreaModeChange = (value) => {
+  ensureAbnormalField(value)
+}
+
+const validateShellForm = () =>
+  new Promise((resolve, reject) => {
+    if (!shellForm.value) {
+      reject(new Error('表单未就绪'))
+      return
+    }
+    shellForm.value.validate((valid) => {
+      if (valid) {
+        resolve(true)
+        return
+      }
+      reject(new Error('表单校验失败'))
+    })
+  })
+
+const collectFormData = () =>
+  getFormRefs().reduce((result, refInstance) => {
+    if (refInstance && typeof refInstance.getFormKvData === 'function') {
+      return Object.assign(result, refInstance.getFormKvData())
+    }
+    return result
+  }, {})
+
+const getFormData = async () => {
+  try {
+    await validateShellForm()
+    const data = collectFormData()
+    outputText.value = JSON.stringify(data, null, 2)
+    proxy?.$message?.success('表单校验成功')
+    return data
+  } catch (error) {
+    outputText.value = ''
+    proxy?.$message?.error('表单校验失败，请先完善必填项')
+    return false
+  }
+}
+
+const resetFormData = (showMessage = true) => {
+  getFormRefs().forEach((refInstance) => {
+    if (refInstance && typeof refInstance.resetForm === 'function') {
+      refInstance.resetForm()
+    }
+  })
+  ensureAbnormalField('normal')
+  uploadFileList.value = []
+  const uploadField = getUploadField()
+  proxy?.$set(uploadField.params, 'fileList', [])
+  proxy?.$set(uploadField, 'value', [])
+  proxy?.$set(uploadField, 'delValue', [])
+  nextTick(() => {
+    shellForm.value?.clearValidate()
+    outputText.value = ''
+    if (showMessage) {
+      proxy?.$message?.success('表单已重置')
+    }
+  })
+}
+
+const loadDetailData = (showMessage = true) => {
+  if (showMessage) {
+    proxy?.$message?.info('开始模拟详情回填')
+  }
+  setTimeout(() => {
+    const detail = createDetailData()
+    resetFormData(false)
+    ensureAbnormalField(detail.det_area_mode)
+    nextTick(() => {
+      getFormRefs().forEach((refInstance) => {
+        if (refInstance && typeof refInstance.setFormData === 'function') {
+          refInstance.setFormData(detail)
+        }
+      })
+      uploadFileList.value = detail.upload_file.slice()
+      proxy?.$set(getUploadField().params, 'fileList', detail.upload_file.slice())
+      if (showMessage) {
+        proxy?.$message?.success('详情已回填')
+      }
+    })
+  }, 300)
+}
+
+const notifyInnerButton = () => {
+  emit('btnClick', collectFormData())
+  proxy?.$message?.success('已触发自定义事件')
+}
+
+const normalizeUploadList = (fileList) =>
+  (fileList || []).map((item) => {
+    const responseData = item && item.response && item.response.data ? item.response.data : item
+    const fileName = responseData.fileName || item.name || '未命名文件'
+    const filePath = responseData.filePath || item.url || ''
+    const fileSize = responseData.fileSize || item.size || (item.raw && item.raw.size) || 0
     return {
-      demoReadOnly: this.readOnly,
-      outputText: '',
-      uploadFileList: [],
-      formState: {
-        rows: createRows(),
-        rows2: createRows2(),
-        rows3: createRows3(),
-        rows4: createRows4(),
-        rowsUpload: createRowsUpload(),
+      name: fileName,
+      url: filePath,
+      fileName,
+      filePath,
+      fileSize,
+    }
+  })
+
+const syncUploadFieldValue = (fileList, removedFile) => {
+  const uploadField = getUploadField()
+  const normalizedList = normalizeUploadList(fileList)
+  uploadFileList.value = (fileList || []).slice()
+  proxy?.$set(uploadField.params, 'fileList', (fileList || []).slice())
+  proxy?.$set(uploadField, 'value', normalizedList)
+  if (removedFile) {
+    const removed = normalizeUploadList([removedFile])[0]
+    const delValue = Array.isArray(uploadField.delValue) ? uploadField.delValue.slice() : []
+    delValue.push(Object.assign({}, removed, { isDelete: 1 }))
+    proxy?.$set(uploadField, 'delValue', delValue)
+  }
+  nextTick(() => {
+    shellForm.value?.validateField('rowsUpload.0.0.value', function () {})
+  })
+}
+
+const mockUploadRequest = (options) => {
+  const file = options.file
+  const timer = setTimeout(() => {
+    const filePath = URL.createObjectURL(file)
+    const response = {
+      code: 0,
+      data: {
+        fileName: file.name,
+        filePath,
+        fileSize: file.size || 0,
       },
     }
-  },
-  watch: {
-    readOnly: {
-      immediate: true,
-      handler(value) {
-        this.demoReadOnly = value
-        this.syncUploadDisabled()
-      },
-    },
-    demoReadOnly() {
-      this.syncUploadDisabled()
-    },
-  },
-  mounted() {
-    this.bindFieldEvents()
-    this.setUploadSlots()
-    this.loadDetailData(false)
-  },
-  methods: {
-    bindFieldEvents() {
-      this.formState.rows[0][0].events.change = this.handleEnableChange
-      this.formState.rows3[1][0].events.change = this.detAreaModeChange
+    if (typeof options.onSuccess === 'function') {
+      options.onSuccess(response, file)
+    }
+  }, 400)
 
-      const uploadField = this.getUploadField()
-      uploadField.params.httpRequest = this.mockUploadRequest
-      uploadField.events = {
-        success: this.handleUploadSuccess,
-        change: this.handleUploadChange,
-        remove: this.handleUploadRemove,
-      }
-      this.syncUploadDisabled()
-    },
-    setUploadSlots() {
-      const uploadField = this.getUploadField()
-      this.$set(uploadField, 'slots', {
-        default: () =>
-          this.$createElement('div', { class: 'upload-trigger' }, [
-            this.$createElement('i', { class: 'el-icon-upload upload-trigger__icon' }),
-            this.$createElement('div', { class: 'upload-trigger__title' }, '点击或拖拽文件到此处上传'),
-            this.$createElement('div', { class: 'upload-trigger__sub' }, '仅做本地模拟，不会真正请求后台'),
-          ]),
-        tip: () =>
-          this.$createElement('div', { class: 'el-upload__tip' }, '支持 txt / md / json / jpg / png / pdf，最多 2 个文件'),
-      })
-    },
-    getUploadField() {
-      return this.formState.rowsUpload[0][0]
-    },
-    getFormRefs() {
-      return ['row1Ref', 'row2Ref', 'row3Ref', 'row4Ref', 'rowUploadRef']
-        .map((name) => this.$refs[name])
-        .filter(Boolean)
-    },
-    syncUploadDisabled() {
-      const uploadField = this.getUploadField()
-      if (uploadField && uploadField.params) {
-        this.$set(uploadField.params, 'disabled', this.demoReadOnly)
+  return {
+    abort() {
+      clearTimeout(timer)
+      if (typeof options.onError === 'function') {
+        options.onError(new Error('上传已取消'))
       }
     },
-    toggleReadOnly() {
-      this.demoReadOnly = !this.demoReadOnly
-    },
-    showToast(message) {
-      this.$message.info(message || '来自 FormDemo 的实例方法调用')
-      return true
-    },
-    handleEnableChange(value) {
-      this.$message.info(value ? '已启用模型能力' : '已停用模型能力')
-    },
-    ensureAbnormalField(mode) {
-      const lastRow = this.formState.rows3[this.formState.rows3.length - 1]
-      const lastKey = lastRow && lastRow[0] && lastRow[0].key
-      if (lastKey === 'det_area_json') {
-        this.formState.rows3.pop()
-      }
-      if (mode === 'abnormal') {
-        this.formState.rows3.push([
-          {
-            key: 'det_area_json',
-            label: '感兴趣区域',
-            value: '',
-            component: CustomRegionEditor,
-            span: 24,
-            params: {
-              rules: [{ required: true, message: '请输入感兴趣区域', trigger: 'blur' }],
-            },
-          },
-        ])
-      }
-    },
-    detAreaModeChange(value) {
-      this.ensureAbnormalField(value)
-    },
-    validateShellForm() {
-      return new Promise((resolve, reject) => {
-        this.$refs.shellForm.validate((valid) => {
-          if (valid) {
-            resolve(true)
-            return
-          }
-          reject(new Error('表单校验失败'))
-        })
-      })
-    },
-    collectFormData() {
-      return this.getFormRefs().reduce((result, ref) => {
-        if (ref && typeof ref.getFormKvData === 'function') {
-          return Object.assign(result, ref.getFormKvData())
-        }
-        return result
-      }, {})
-    },
-    async getFormData() {
-      try {
-        await this.validateShellForm()
-        const data = this.collectFormData()
-        this.outputText = JSON.stringify(data, null, 2)
-        this.$message.success('表单校验成功')
-        return data
-      } catch (error) {
-        this.outputText = ''
-        this.$message.error('表单校验失败，请先完善必填项')
-        return false
-      }
-    },
-    resetFormData(showMessage = true) {
-      this.getFormRefs().forEach((ref) => {
-        if (ref && typeof ref.resetForm === 'function') {
-          ref.resetForm()
-        }
-      })
-      this.ensureAbnormalField('normal')
-      this.uploadFileList = []
-      const uploadField = this.getUploadField()
-      this.$set(uploadField.params, 'fileList', [])
-      this.$set(uploadField, 'value', [])
-      this.$set(uploadField, 'delValue', [])
-      this.$nextTick(() => {
-        this.$refs.shellForm.clearValidate()
-        this.outputText = ''
-        if (showMessage) {
-          this.$message.success('表单已重置')
-        }
-      })
-    },
-    loadDetailData(showMessage = true) {
-      if (showMessage) {
-        this.$message.info('开始模拟详情回填')
-      }
-      setTimeout(() => {
-        const detail = createDetailData()
-        this.resetFormData(false)
-        this.ensureAbnormalField(detail.det_area_mode)
-        this.$nextTick(() => {
-          this.getFormRefs().forEach((ref) => {
-            if (ref && typeof ref.setFormData === 'function') {
-              ref.setFormData(detail)
-            }
-          })
-          this.uploadFileList = detail.upload_file.slice()
-          this.$set(this.getUploadField().params, 'fileList', detail.upload_file.slice())
-          if (showMessage) {
-            this.$message.success('详情已回填')
-          }
-        })
-      }, 300)
-    },
-    notifyInnerButton() {
-      this.$emit('btnClick', this.collectFormData())
-      this.$message.success('已触发自定义事件')
-    },
-    normalizeUploadList(fileList) {
-      return (fileList || []).map((item) => {
-        const responseData = item && item.response && item.response.data ? item.response.data : item
-        const fileName = responseData.fileName || item.name || '未命名文件'
-        const filePath = responseData.filePath || item.url || ''
-        const fileSize = responseData.fileSize || item.size || (item.raw && item.raw.size) || 0
-        return {
-          name: fileName,
-          url: filePath,
-          fileName,
-          filePath,
-          fileSize,
-        }
-      })
-    },
-    syncUploadFieldValue(fileList, removedFile) {
-      const uploadField = this.getUploadField()
-      const normalizedList = this.normalizeUploadList(fileList)
-      this.uploadFileList = (fileList || []).slice()
-      this.$set(uploadField.params, 'fileList', (fileList || []).slice())
-      this.$set(uploadField, 'value', normalizedList)
-      if (removedFile) {
-        const removed = this.normalizeUploadList([removedFile])[0]
-        const delValue = Array.isArray(uploadField.delValue) ? uploadField.delValue.slice() : []
-        delValue.push(Object.assign({}, removed, { isDelete: 1 }))
-        this.$set(uploadField, 'delValue', delValue)
-      }
-      this.$nextTick(() => {
-        this.$refs.shellForm.validateField('rowsUpload.0.0.value', function () {})
-      })
-    },
-    mockUploadRequest(options) {
-      const file = options.file
-      const timer = setTimeout(() => {
-        const filePath = URL.createObjectURL(file)
-        const response = {
-          code: 0,
-          data: {
-            fileName: file.name,
-            filePath,
-            fileSize: file.size || 0,
-          },
-        }
-        if (typeof options.onSuccess === 'function') {
-          options.onSuccess(response, file)
-        }
-      }, 400)
-
-      return {
-        abort() {
-          clearTimeout(timer)
-          if (typeof options.onError === 'function') {
-            options.onError(new Error('上传已取消'))
-          }
-        },
-      }
-    },
-    handleUploadSuccess(_response, _file, fileList) {
-      this.syncUploadFieldValue(fileList)
-      this.$message.success('文件上传成功')
-    },
-    handleUploadChange(_file, fileList) {
-      this.syncUploadFieldValue(fileList)
-    },
-    handleUploadRemove(file, fileList) {
-      this.syncUploadFieldValue(fileList, file)
-      this.$message.warning('已移除文件')
-    },
-  },
+  }
 }
+
+const handleUploadSuccess = (_response, _file, fileList) => {
+  syncUploadFieldValue(fileList)
+  proxy?.$message?.success('文件上传成功')
+}
+
+const handleUploadChange = (_file, fileList) => {
+  syncUploadFieldValue(fileList)
+}
+
+const handleUploadRemove = (file, fileList) => {
+  syncUploadFieldValue(fileList, file)
+  proxy?.$message?.warning('已移除文件')
+}
+
+onMounted(() => {
+  bindFieldEvents()
+  setUploadSlots()
+  loadDetailData(false)
+})
+
+defineExpose({
+  getFormData,
+  resetFormData,
+  loadDetailData,
+  showToast,
+})
 </script>
 
 <style scoped>

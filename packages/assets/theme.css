@@ -5,8 +5,8 @@
   --matrix-form-title-color: #303133;
   --matrix-form-title-margin-bottom: 12px;
   --matrix-form-title-content-padding: 0;
-  --matrix-form-title-icon: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
-  /* --matrix-form-title-icon: url(./assets/imgs/icon-detail-title.png); */
+  /* --matrix-form-title-icon: linear-gradient(135deg, #409eff 0%, #67c23a 100%); */
+  --matrix-form-title-icon: url(./imgs/icon-detail-title.png);
 
   --matrix-dialog-bk-color: #ffffff;
   --matrix-dialog-border-radius: 8px;
