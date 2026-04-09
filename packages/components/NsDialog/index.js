@@ -58,6 +58,35 @@ function removeDialogInstance(instance) {
   }
 }
 
+function destroyDialog(instance) {
+  if (!instance || instance.destroyed) {
+    return
+  }
+  instance.destroyed = true
+
+  const vm = instance.vm
+  if (vm && !vm._isDestroyed) {
+    vm.$destroy()
+  }
+
+  const rootEl = instance.rootEl || (vm && vm.$el)
+  if (rootEl && instance.element && rootEl.parentNode === instance.element) {
+    instance.element.removeChild(rootEl)
+  }
+
+  if (instance.element && instance.element.parentNode) {
+    instance.element.parentNode.removeChild(instance.element)
+  }
+
+  instance.vm = null
+  instance.domRef = null
+  instance.rootEl = null
+  instance.updateOption = () => {}
+  instance.callMethod = () => {}
+  instance.close = () => {}
+  removeDialogInstance(instance)
+}
+
 export function closeAllNsDialog() {
   dialogInstances.slice().forEach((instance) => {
     if (instance && typeof instance.close === 'function') {
@@ -91,6 +120,8 @@ export function NsDialog(data, modal = true, appendTo = '#app') {
     class: dialogData.class || '',
     element: container,
     vm: null,
+    rootEl: null,
+    destroyed: false,
     domRef: null,
     updateOption: () => {},
     callMethod: () => {},
@@ -116,13 +147,7 @@ export function NsDialog(data, modal = true, appendTo = '#app') {
           dialogData.closed()
         }
       } finally {
-        if (instance.vm) {
-          instance.vm.$destroy()
-        }
-        if (container.parentNode) {
-          container.parentNode.removeChild(container)
-        }
-        removeDialogInstance(instance)
+        destroyDialog(instance)
       }
     },
   }
@@ -138,13 +163,20 @@ export function NsDialog(data, modal = true, appendTo = '#app') {
   const vm = new DialogConstructor(vmOptions)
   instance.vm = vm
   instance.close = () => {
+    if (instance.destroyed) {
+      return
+    }
     if (vm && typeof vm.closeDialog === 'function') {
       vm.closeDialog()
     }
   }
 
   dialogInstances.push(instance)
-  vm.$mount(container)
+  vm.$mount()
+  if (vm.$el) {
+    instance.rootEl = vm.$el
+    container.appendChild(vm.$el)
+  }
   return instance
 }
 

@@ -50,17 +50,17 @@ pnpm i vue2-components-plus element-ui
 Vue.use(ElementUI)
 // 安装组件库(ts需要//@ts-ignore)
 //@ts-ignore
-import NsComponents from 'vue2-components-plus'
+import NsComponents from 'vue2-components-plus/legacy'
 import 'vue2-components-plus/dist/vue2-components-plus.css'
 
-// Vuex 项目
+// 状态管理：Vuex
 import store from './store'
-Vue.use(NsComponents, { store })
+Vue.use(NsComponents.default || NsComponents, { store })
 
-// Pinia 项目
+// 状态管理：Pinia
 import { createPinia } from 'pinia'
 const pinia = createPinia()
-Vue.use(NsComponents, { pinia })
+Vue.use(NsComponents.default || NsComponents, { pinia })
 ```
 
 ## 📋 组件列表
@@ -172,6 +172,26 @@ NsDialog({
 // 关闭所有对话框
 closeAllNsDialog()
 ```
+
+### Legacy / ES5 兼容构建
+- **产物与入口**：ES5 产物在 `dist/vue2-components-plus.es5.js`，入口别名 `vue2-components-plus/legacy`（根目录有 `legacy.js` 指向 ES5）。
+- **生成（维护者）**：`pnpm build:es5`（会先跑默认 `pnpm build`，再用 Babel 输出 ES5 文件）。
+- **在老版 webpack + Vue2 项目中使用**：
+  ```js
+  import Vue from 'vue'
+  import LegacyLib from 'vue2-components-plus/legacy'
+  import 'vue2-components-plus/dist/vue2-components-plus.css'
+  Vue.use(LegacyLib.default || LegacyLib)
+  ```
+- **无打包器 / 直接 `<script>` 引入**（先把 dist 文件放到静态目录）：
+  ```html
+  <link rel="stylesheet" href="/lib/vue2-components-plus.css" />
+  <script src="/lib/vue2-components-plus.es5.js"></script>
+  <script>
+    Vue.use(Vue2ComponentsPlus.default || Vue2ComponentsPlus)
+  </script>
+  ```
+- **若仍有语法报错**：在宿主项目对 `node_modules/vue2-components-plus` 追加 `babel-loader` 规则（targets IE11）。
 
 ## 🔧 自定义指令
 

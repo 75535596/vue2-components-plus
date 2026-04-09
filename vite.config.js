@@ -27,6 +27,11 @@ export default defineConfig({
   },
 
   build: {
+    // 为了兼容旧版 webpack/babel 项目，输出转成 ES2015（去掉对象展开等新语法）
+    target: 'es2015',
+    esbuild: {
+      target: 'es2015',
+    },
     outDir: 'dist',
     lib: {
       entry: fileURLToPath(new URL('./packages/index.js', import.meta.url)),
@@ -47,6 +52,7 @@ export default defineConfig({
 
     minify: 'terser',
     terserOptions: {
+      ecma: 2015,
       compress: {
         drop_console: true,
         drop_debugger: true,
