@@ -328,8 +328,13 @@ export default {
   methods: {
     normalizeSize(value) {
       if (value === null || value === undefined || value === '') return ''
-      return /^\d+$/.test(String(value)) ? `${value}px` : String(value)
+      if (typeof value === 'number' && isFinite(value)) return `${value}px`
+      const str = String(value).trim()
+      if (str === '') return ''
+      // 支持小数坐标，避免拖动时因无单位导致定位异常
+      return Number.isNaN(Number(str)) ? str : `${Number(str)}px`
     },
+
     resolvePadding() {
       if (Array.isArray(this.dialogPadding)) {
         return this.dialogPadding.map((item) => this.normalizeSize(item)).join(' ')
