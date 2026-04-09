@@ -21,12 +21,22 @@
         />
         <template v-else>{{ currentTitle }}</template>
       </div>
-      <div class="ns-dialog-plus__actions">
-        <el-button v-if="showMaximizeButton" type="text" class="ns-dialog-plus__action-btn" @click.stop="toggleMaximize">
-          {{ isMaximized ? '还原' : '最大化' }}
-        </el-button>
-        <el-button type="text" class="ns-dialog-plus__action-btn" @click.stop="closeDialog">关闭</el-button>
+      <div class="dialog-controls">
+        <span
+          v-if="showMaximizeButton"
+          class="dialog-icon dialog-maximize"
+          title="最大化/还原"
+          @click.stop="toggleMaximize"
+        >
+          <i v-if="!isMaximized" class="el-icon-full-screen"></i>
+          <i v-else class="el-icon-zoom-out"></i>
+        </span>
+        <span class="dialog-icon dialog-close" title="关闭" @click.stop="closeDialog">
+          <i class="el-icon-close"></i>
+
+        </span>
       </div>
+
     </div>
 
     <div class="ns-dialog-plus__body" :style="bodyStyle">
@@ -566,17 +576,35 @@ export default {
   color: var(--matrix-dialog-header-text-color);
 }
 
-.ns-dialog-plus__actions {
+.dialog-controls {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.ns-dialog-plus__action-btn {
-  padding: 0;
+.dialog-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--matrix-dialog-header-text-color);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dialog-icon:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--matrix-color-primary, #409eff);
+}
+
+.dialog-close:hover {
+  color: #f56c6c;
 }
 
 .ns-dialog-plus__body {
+
   min-height: 60px;
   flex: 1 1 auto;
   min-width: 0;
