@@ -212,4 +212,33 @@ export default {
 .page-search__form {
   width: 100%;
 }
+
+.page-search__form /deep/ .el-form-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-right: 0;
+}
+
+.page-search__form /deep/ .el-form-item__label {
+  float: none;
+  white-space: nowrap;
+  padding-right: 12px;
+}
+
+.page-search__form /deep/ .el-form-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-search__form /deep/ .el-form-item__content > .el-input,
+.page-search__form /deep/ .el-form-item__content > .el-textarea,
+.page-search__form /deep/ .el-form-item__content > .el-select,
+.page-search__form /deep/ .el-form-item__content > .el-date-editor,
+.page-search__form /deep/ .el-form-item__content > .el-cascader,
+.page-search__form /deep/ .el-form-item__content > .el-autocomplete,
+.page-search__form /deep/ .el-form-item__content > .el-input-number,
+.page-search__form /deep/ .el-form-item__content > .el-slider {
+  width: 100%;
+}
 </style>

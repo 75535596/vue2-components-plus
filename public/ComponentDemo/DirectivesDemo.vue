@@ -236,7 +236,7 @@
     </div>
   </div>
 </template>
-<script setup lang="ts">
+<script setup>
 import { ref, provide } from 'vue'
 
 // v-sline 演示数据
@@ -270,7 +270,7 @@ const username = ref('')
 const age = ref('')
 const description = ref('')
 // 自动完成搜索函数
-function querySearch(queryString: string, cb: (results: Array<{ value: string }>) => void) {
+function querySearch(queryString, cb) {
   const results = queryString
     ? [
         { value: '测试用户1' },
@@ -313,7 +313,7 @@ function parentClick() {
   eventResult.value = '父容器被点击了 - 这不应该发生，因为使用了v-event-unuse'
 }
 
-function childClick(event: Event) {
+function childClick(event) {
   event.stopPropagation()
   eventResult.value = '子容器被点击了 - v-event-use生效'
 }

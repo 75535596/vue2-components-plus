@@ -73,7 +73,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { computed, getCurrentInstance, nextTick, onMounted, ref } from 'vue'
 import { departmentOptions, fetchDepartmentOptions, fetchStatusOptions, filterUsers, mockUsers } from './mockData'
 
@@ -298,8 +298,8 @@ const containerRef = ref()
 const loading = ref(false)
 const total = ref(0)
 const tableData = ref([])
-const searchParams = ref<Record<string, any>>({})
-const paginationMode = ref<'backend' | 'frontend'>('backend')
+const searchParams = ref({})
+const paginationMode = ref('backend')
 const mockUserCount = mockUsers.length
 const externalSearchParams = { source: 'vue2-demo' }
 const searchProps = { labelWidth: '90px' }
@@ -317,21 +317,21 @@ const mergedTableProps = computed(() => ({
   stripe: true,
 }))
 
-function handleKeywordEnter(event: KeyboardEvent) {
+function handleKeywordEnter(event) {
   if (event && event.key === 'Enter') {
     handleSearch(containerRef.value ? containerRef.value.getSearchFormData() : {})
   }
 }
 
-function getStatusType(status: number) {
+function getStatusType(status) {
   return status === 1 ? 'success' : 'danger'
 }
 
-function getStatusText(status: number) {
+function getStatusText(status) {
   return status === 1 ? '启用' : '禁用'
 }
 
-function getDepartmentText(value: string) {
+function getDepartmentText(value) {
   const matched = departmentOptions.find(function (item) {
     return item.value === value
   })
@@ -344,7 +344,7 @@ function getCurrentPagination() {
     : { currentPage1: 1, pageSize1: 10 }
 }
 
-function paginateList(list: any[], pagination: any) {
+function paginateList(list, pagination) {
   const currentPage = Number(pagination.currentPage1 || 1)
   const pageSize = Number(pagination.pageSize1 || 10)
   const start = (currentPage - 1) * pageSize
@@ -399,7 +399,7 @@ async function loadData() {
   }
 }
 
-function handleSearch(params: Record<string, any>) {
+function handleSearch(params) {
   searchParams.value = Object.assign({}, params)
   loadData()
 }
@@ -408,7 +408,7 @@ function handleReset() {
   proxy?.$message?.info('搜索条件已重置')
 }
 
-function handleSelectionChange(selection: any[]) {
+function handleSelectionChange(selection) {
   if (selection && selection.length) {
     proxy?.$message?.success('当前选中 ' + selection.length + ' 行')
   }
@@ -426,7 +426,7 @@ function getSelectedKeys() {
   proxy?.$message?.success('当前选中 ID：' + (keys.length ? keys.join(', ') : '无'))
 }
 
-function selectRows(ids: number[]) {
+function selectRows(ids) {
   if (!containerRef.value) return
   containerRef.value.setSelectionKeys(ids)
   proxy?.$message?.success('已尝试选中 ID：' + ids.join(', '))
@@ -455,15 +455,15 @@ function handleAdd() {
   proxy?.$message?.success('点击了新增按钮')
 }
 
-function handleView(row: any) {
+function handleView(row) {
   proxy?.$message?.info('查看：' + row.username)
 }
 
-function handleEdit(row: any) {
+function handleEdit(row) {
   proxy?.$message?.success('编辑：' + row.username)
 }
 
-function handleDelete(row: any) {
+function handleDelete(row) {
   if (row.status === 0) {
     proxy?.$message?.warning('禁用状态用户不可删除')
     return
