@@ -4,10 +4,19 @@
 
 ## 1. 注册方式
 
-库内通过 `registerDirective(Vue)` 注册全部指令。
+推荐方式是安装组件库插件，指令会自动注册：
 
 ```js
-import { registerDirective } from '@/packages/directives'
+import Vue from 'vue'
+import Vue2ComponentsPlus from 'vue2-components-plus'
+
+Vue.use(Vue2ComponentsPlus)
+```
+
+如果你在本仓库源码环境里单独注册指令，可使用：
+
+```js
+import { registerDirective } from '../../packages/directives'
 registerDirective(Vue)
 ```
 
