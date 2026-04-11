@@ -6,6 +6,8 @@ vue2-components-plus  是一个功能丰富的 Vue 3 企业级组件库，提供
 
 组件使用示例参考 `dist/ComponentDemo`
 
+Author: zhuyi
+
 ## 📸 部分组件预览
 
 ### NsDialog
