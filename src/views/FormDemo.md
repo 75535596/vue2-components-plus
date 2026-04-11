@@ -154,3 +154,20 @@ field.slots = {
 - 上传场景同时维护 `value` + `params.fileList` + `delValue`，否则回显和删除记录会不一致。
 - 复杂联动用 `field.events.change` 动态增删 `rows` 节点，再 `nextTick` 回填。
 - 只读展示有格式需求时优先使用 `params.formatter`。
+
+## 11. Demo 功能映射（`src/views/FormDemo.vue`）
+
+当前 Demo 里新增的扩展操作已对应到以下能力：
+
+| 按钮/场景 | 对应能力 |
+|---|---|
+| 获取表单数据 | `getFormKvData()` + 外层 `el-form.validate` |
+| 模拟详情回填 | `setFormData(data)` |
+| 重置表单 | `resetForm(triggerEvents)` |
+| 查看节点配置 | `getFormNodeByKey(key)` |
+| 查看节点实例 | `getFormNodeRefByKey(key)` |
+| 重建默认值快照 | `initDefaultValues()` |
+| 切换只读 | `readOnly` + `readOnlyUseComponent` |
+| 触发自定义事件 | 通过 `emit('btnClick', payload)` 给外层容器 |
+
+并且 `rows` 已示例 `children` 分组字段结构，可直接按该模式扩展复杂分组表单。

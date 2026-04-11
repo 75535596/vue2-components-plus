@@ -136,7 +136,21 @@ ins.close()
 | `closeAllNsDialog()` | `NsDialog/index.js` | 关闭所有实例 |
 | `setExternalApp(app, options)` | `NsDialog/index.js` | 外部上下文注入（Vue/store/pinia） |
 
-## 7. AI 生成代码建议
+## 7. Demo 功能映射（`src/views/DialogDemo.vue`）
+
+当前 Demo 额外演示了以下组合能力，便于快速复制到业务代码：
+
+| 按钮/场景 | 对应能力 |
+|---|---|
+| 打开弹窗 | `NsDialog(config, modal, appendTo)` 基础调用、多实例错位显示 |
+| 打开只读弹窗 | `option.readOnly` + `updateOption` 动态切换 |
+| 打开自定义头底部弹窗 | `headerDom/headerOption` + `footerDom/footerOption/footerEvents` |
+| 自定义头底部弹窗 | `modalColor` + `closeOnClickModal=false` + `immediately=true` |
+| 更新最后一个弹窗 | `instance.updateOption(partial)` |
+| 调用最后一个弹窗内容方法 | `instance.callMethod(name, ...args)` |
+| 关闭全部 | `this.$closeAllNsDialog()` / `window.closeAllNsDialog()` |
+
+## 8. AI 生成代码建议
 
 - 创建弹窗时必须提供 `dom`，否则函数返回 `false`。
 - 内容组件应暴露可调用方法（如 `getFormData`）以配合 `callMethod`/`confirm`。
