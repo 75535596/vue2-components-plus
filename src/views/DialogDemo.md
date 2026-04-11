@@ -13,7 +13,7 @@
 ## 2. 基础调用
 
 ```js
-import FormDemo from '@/views/FormSetupDemo.vue'
+import FormDemo from '@/views/FormDemo.vue'
 
 window.NsDialog(
   {

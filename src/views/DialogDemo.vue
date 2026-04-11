@@ -55,7 +55,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, getCurrentInstance } from 'vue'
-import FormDemo from '@/views/FormSetupDemo.vue'
+import FormDemo from '@/views/FormDemo.vue'
 
 const dialogInstances = ref([])
 const openIndex = ref(0)
