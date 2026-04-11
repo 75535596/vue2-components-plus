@@ -411,9 +411,8 @@ function handleReset() {
 }
 
 function handleSelectionChange(selection) {
-  if (selection && selection.length) {
-    proxy.$message.success('当前选中 ' + selection.length + ' 行')
-  }
+  console.log('选中切换', selection)
+  if (!selection) return
 }
 
 function getSelectedRows() {
