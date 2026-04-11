@@ -222,15 +222,15 @@ export default {
         '--ns-form-label-width': this.normalizeSize(this.labelWidth),
         '--ns-form-super-label-width': this.normalizeSize(this.superLabelWidth),
         '--ns-form-label-color': this.labelColor,
-        '--ns-form-row-gap': this.gapV,
-        '--ns-form-col-gap': this.gapH,
+        '--ns-form-row-gap': this.normalizeSize(this.gapV),
+        '--ns-form-col-gap': this.normalizeSize(this.gapH),
         '--ns-form-item-height': this.normalizeSize(this.height),
         '--ns-form-background-color': this.backgroundColor || '#ffffff',
       }
     },
     rowStyle() {
       return {
-        marginBottom: this.model.indexOf('table') > -1 ? '0' : this.gapV,
+        marginBottom: this.model.indexOf('table') > -1 ? '0' : this.normalizeSize(this.gapV),
       }
     },
     labelStyle() {
@@ -315,7 +315,7 @@ export default {
         }
       }
       const columns = (row || []).filter((field) => field && field.span !== 0).length || 1
-      const width = `calc(${100 / columns}% - ${this.gapH})`
+      const width = `calc((100% - ${(columns - 1)} * var(--ns-form-col-gap)) / ${columns})`
       return {
         flex: `0 0 ${width}`,
         maxWidth: width,

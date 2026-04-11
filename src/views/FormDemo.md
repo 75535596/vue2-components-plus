@@ -80,8 +80,8 @@ const state = reactive({
 | `labelWidth` | `String` | `'80px'` | 普通标签宽度 |
 | `superLabelWidth` | `String` | `'30px'` | 分组父标签宽度 |
 | `labelColor` | `String` | `'#0A7BFF'` | 标签颜色 |
-| `gapH` | `String` | `'10px'` | 列间距 |
-| `gapV` | `String` | `'10px'` | 行间距 |
+| `gapH` | `String` | `'10px'` | 列间距，支持 `20` / `20px` / `1rem` |
+| `gapV` | `String` | `'10px'` | 行间距，支持 `20` / `20px` / `1rem` |
 | `height` | `String` | `'32px'` | 值区最小高度 |
 | `rows` | `Array` | `[]` | 动态字段配置 |
 | `backgroundColor` | `String` | `''` | 字段背景色 |
@@ -96,6 +96,12 @@ const state = reactive({
 - 支持值为 `left`、`top`、`right`
 - 默认值是 `left`
 - 当使用 `top` 时，标签会显示在字段内容上方
+
+### 4.2 `gapH / gapV` 单位说明
+
+- `gapH`、`gapV` 传纯数字字符串时会自动补成 `px`，例如 `gapH="20"`、`gapV="20"`
+- 也支持直接传带单位值，例如 `20px`、`1rem`、`10%`
+- 列宽计算已按 `gap` 总量精确分配，`gapH="0"` 和 `gapH="0px"` 都可正常铺满
 
 ## 5. `rows` 数据结构
 
@@ -342,8 +348,8 @@ field.slots = {
         :readOnly="readOnly"
         :labelPosition="labelPosition"
         labelWidth="120"
-        gapH="16px"
-        gapV="12px"
+        gapH="16"
+        gapV="12"
       />
     </NsFormTitle>
 
