@@ -10,38 +10,41 @@
       </div>
     </div>
 
-    <el-table
-      ref="tableRef"
-      v-loading="loading"
-      :data="tableData"
-      :border="border"
-      :stripe="stripe"
-      :height="height"
-      :max-height="maxHeight"
-      :row-key="rowKey"
-      :default-expand-all="defaultExpandAll"
-      :highlight-current-row="highlightCurrentRow"
-      v-bind="mergedAttrs"
-      v-on="mergedListeners"
-      @selection-change="handleSelectionChange"
-      @sort-change="handleSortChange"
-      @row-click="handleRowClick"
-    >
-      <el-table-column v-if="showSelection" type="selection" width="55" :reserve-selection="!!rowKey" />
-      <el-table-column v-if="showIndex" type="index" label="序号" width="60" :index="getIndex" />
+    <div class="page-table__main">
+      <el-table
+        ref="tableRef"
+        v-loading="loading"
+        :data="tableData"
+        :border="border"
+        :stripe="stripe"
+        :height="resolvedHeight"
+        :max-height="resolvedMaxHeight"
+        :row-key="rowKey"
+        :default-expand-all="defaultExpandAll"
+        :highlight-current-row="highlightCurrentRow"
+        :class="['page-table__table', { 'page-table__table--no-border': !border }]"
+        v-bind="mergedAttrs"
+        v-on="mergedListeners"
+        @selection-change="handleSelectionChange"
+        @sort-change="handleSortChange"
+        @row-click="handleRowClick"
+      >
+        <el-table-column v-if="showSelection" type="selection" width="55" :reserve-selection="!!rowKey" />
+        <el-table-column v-if="showIndex" type="index" label="序号" width="60" :index="getIndex" />
 
-      <table-column
-        v-for="(column, index) in columns"
-        :key="column.prop || column.label || index"
-        :column="column"
-        :slot-renderers="slotRenderers"
-        @link-click="handleLinkClick"
-      />
-      <template slot="empty">
-        <slot-renderer v-if="slotRenderers.empty" :renderer="slotRenderers.empty" :scope="{ tableData }" />
-        <div v-else class="page-table__empty">暂无数据</div>
-      </template>
-    </el-table>
+        <table-column
+          v-for="(column, index) in columns"
+          :key="column.prop || column.label || index"
+          :column="column"
+          :slot-renderers="slotRenderers"
+          @link-click="handleLinkClick"
+        />
+        <template slot="empty">
+          <slot-renderer v-if="slotRenderers.empty" :renderer="slotRenderers.empty" :scope="{ tableData }" />
+          <div v-else class="page-table__empty">暂无数据</div>
+        </template>
+      </el-table>
+    </div>
 
     <div v-if="showPagination" class="page-table__pagination">
       <el-pagination
@@ -121,6 +124,10 @@ export default {
       type: [String, Number],
       default: undefined,
     },
+    autoHeight: {
+      type: Boolean,
+      default: true,
+    },
     rowKey: {
       type: [String, Function],
       default: undefined,
@@ -197,6 +204,21 @@ export default {
       const listeners = { ...(this.$listeners || {}) }
       RESERVED_LISTENERS.forEach((name) => delete listeners[name])
       return listeners
+    },
+    resolvedHeight() {
+      if (this.height !== undefined) {
+        return this.height
+      }
+      if (this.autoHeight && this.maxHeight === undefined) {
+        return '100%'
+      }
+      return undefined
+    },
+    resolvedMaxHeight() {
+      if (this.maxHeight !== undefined) {
+        return this.maxHeight
+      }
+      return undefined
     },
   },
   watch: {
@@ -354,6 +376,26 @@ export default {
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-height: 0;
+}
+
+.page-table__main {
+  flex: 1;
+  min-height: 0;
+}
+
+.page-table__table {
+  width: 100%;
+}
+
+.page-table__table--no-border /deep/ .el-table::after,
+.page-table__table--no-border /deep/ .el-table--border::after {
+  width: 0;
+}
+
+.page-table__table--no-border /deep/ .el-table__header-wrapper th,
+.page-table__table--no-border /deep/ .el-table__body-wrapper td {
+  border-right: 0;
 }
 
 .page-table__header {

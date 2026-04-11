@@ -516,7 +516,7 @@ const getFormRefs = () => [row1Ref.value, row2Ref.value, row3Ref.value, row4Ref.
 const syncUploadDisabled = () => {
   const uploadField = getUploadField()
   if (uploadField && uploadField.params) {
-    proxy?.$set(uploadField.params, 'disabled', demoReadOnly.value)
+    proxy.$set(uploadField.params, 'disabled', demoReadOnly.value)
   }
 }
 
@@ -549,15 +549,15 @@ const bindFieldEvents = () => {
 
 const setUploadSlots = () => {
   const uploadField = getUploadField()
-  proxy?.$set(uploadField, 'slots', {
+  proxy.$set(uploadField, 'slots', {
     default: () =>
-      proxy?.$createElement('div', { class: 'upload-trigger' }, [
+      proxy.$createElement('div', { class: 'upload-trigger' }, [
         proxy.$createElement('i', { class: 'el-icon-upload upload-trigger__icon' }),
         proxy.$createElement('div', { class: 'upload-trigger__title' }, '点击或拖拽文件到此处上传'),
         proxy.$createElement('div', { class: 'upload-trigger__sub' }, '仅做本地模拟，不会真正请求后台'),
       ]),
     tip: () =>
-      proxy?.$createElement('div', { class: 'el-upload__tip' }, '支持 txt / md / json / jpg / png / pdf，最多 2 个文件'),
+      proxy.$createElement('div', { class: 'el-upload__tip' }, '支持 txt / md / json / jpg / png / pdf，最多 2 个文件'),
   })
 }
 
@@ -566,12 +566,12 @@ const toggleReadOnly = () => {
 }
 
 const showToast = (message) => {
-  proxy?.$message?.info(message || '来自 FormDemo 的实例方法调用')
+  proxy.$message.info(message || '来自 FormDemo 的实例方法调用')
   return true
 }
 
 const handleEnableChange = (value) => {
-  proxy?.$message?.info(value ? '已启用模型能力' : '已停用模型能力')
+  proxy.$message.info(value ? '已启用模型能力' : '已停用模型能力')
 }
 
 const ensureAbnormalField = (mode) => {
@@ -628,11 +628,11 @@ const getFormData = async () => {
     await validateShellForm()
     const data = collectFormData()
     outputText.value = JSON.stringify(data, null, 2)
-    proxy?.$message?.success('表单校验成功')
+    proxy.$message.success('表单校验成功')
     return data
   } catch (error) {
     outputText.value = ''
-    proxy?.$message?.error('表单校验失败，请先完善必填项')
+    proxy.$message.error('表单校验失败，请先完善必填项')
     return false
   }
 }
@@ -646,21 +646,21 @@ const resetFormData = (showMessage = true) => {
   ensureAbnormalField('normal')
   uploadFileList.value = []
   const uploadField = getUploadField()
-  proxy?.$set(uploadField.params, 'fileList', [])
-  proxy?.$set(uploadField, 'value', [])
-  proxy?.$set(uploadField, 'delValue', [])
+  proxy.$set(uploadField.params, 'fileList', [])
+  proxy.$set(uploadField, 'value', [])
+  proxy.$set(uploadField, 'delValue', [])
   nextTick(() => {
-    shellForm.value?.clearValidate()
+    shellForm.value.clearValidate()
     outputText.value = ''
     if (showMessage) {
-      proxy?.$message?.success('表单已重置')
+      proxy.$message.success('表单已重置')
     }
   })
 }
 
 const loadDetailData = (showMessage = true) => {
   if (showMessage) {
-    proxy?.$message?.info('开始模拟详情回填')
+    proxy.$message.info('开始模拟详情回填')
   }
   setTimeout(() => {
     const detail = createDetailData()
@@ -673,9 +673,9 @@ const loadDetailData = (showMessage = true) => {
         }
       })
       uploadFileList.value = detail.upload_file.slice()
-      proxy?.$set(getUploadField().params, 'fileList', detail.upload_file.slice())
+      proxy.$set(getUploadField().params, 'fileList', detail.upload_file.slice())
       if (showMessage) {
-        proxy?.$message?.success('详情已回填')
+        proxy.$message.success('详情已回填')
       }
     })
   }, 300)
@@ -683,7 +683,7 @@ const loadDetailData = (showMessage = true) => {
 
 const notifyInnerButton = () => {
   emit('btnClick', collectFormData())
-  proxy?.$message?.success('已触发自定义事件')
+  proxy.$message.success('已触发自定义事件')
 }
 
 const normalizeUploadList = (fileList) =>
@@ -705,16 +705,16 @@ const syncUploadFieldValue = (fileList, removedFile) => {
   const uploadField = getUploadField()
   const normalizedList = normalizeUploadList(fileList)
   uploadFileList.value = (fileList || []).slice()
-  proxy?.$set(uploadField.params, 'fileList', (fileList || []).slice())
-  proxy?.$set(uploadField, 'value', normalizedList)
+  proxy.$set(uploadField.params, 'fileList', (fileList || []).slice())
+  proxy.$set(uploadField, 'value', normalizedList)
   if (removedFile) {
     const removed = normalizeUploadList([removedFile])[0]
     const delValue = Array.isArray(uploadField.delValue) ? uploadField.delValue.slice() : []
     delValue.push(Object.assign({}, removed, { isDelete: 1 }))
-    proxy?.$set(uploadField, 'delValue', delValue)
+    proxy.$set(uploadField, 'delValue', delValue)
   }
   nextTick(() => {
-    shellForm.value?.validateField('rowsUpload.0.0.value', function () {})
+    shellForm.value.validateField('rowsUpload.0.0.value', function () {})
   })
 }
 
@@ -747,7 +747,7 @@ const mockUploadRequest = (options) => {
 
 const handleUploadSuccess = (_response, _file, fileList) => {
   syncUploadFieldValue(fileList)
-  proxy?.$message?.success('文件上传成功')
+  proxy.$message.success('文件上传成功')
 }
 
 const handleUploadChange = (_file, fileList) => {
@@ -756,7 +756,7 @@ const handleUploadChange = (_file, fileList) => {
 
 const handleUploadRemove = (file, fileList) => {
   syncUploadFieldValue(fileList, file)
-  proxy?.$message?.warning('已移除文件')
+  proxy.$message.warning('已移除文件')
 }
 
 onMounted(() => {

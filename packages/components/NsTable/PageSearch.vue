@@ -46,7 +46,8 @@
               type="text"
               @click="toggleCollapse"
             >
-              {{ isCollapsed ? '展开' : '收起' }}
+              <span>{{ isCollapsed ? '展开' : '收起' }}</span>
+              <i :class="isCollapsed ? 'el-icon-arrow-down' : 'el-icon-arrow-up'" />
             </el-button>
           </el-form-item>
         </el-col>
@@ -206,7 +207,24 @@ export default {
 
 .page-search__actions {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+}
+
+.page-search__actions /deep/ .el-form-item {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+}
+
+.page-search__actions /deep/ .el-form-item__content {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.page-search__actions /deep/ .el-button {
+  white-space: nowrap;
 }
 
 .page-search__form {

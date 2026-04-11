@@ -17,6 +17,7 @@
 
     <NsTableContainer
       ref="containerRef"
+      class="table-demo__container"
       page-number-key="currentPage1"
       page-size-key="pageSize1"
       page-total-key="total1"
@@ -307,7 +308,7 @@ const searchItems = ref(createSearchItems())
 const columns = ref([])
 const { proxy } = getCurrentInstance() || {}
 
-const mergedTableProps = computed(() => ({
+const mergedTableProps = ref({
   showSelection: true,
   showIndex: true,
   loading: loading.value,
@@ -315,7 +316,8 @@ const mergedTableProps = computed(() => ({
   showPagination: true,
   pageSizes: [5, 10, 20],
   stripe: true,
-}))
+  border: true
+})
 
 function handleKeywordEnter(event) {
   if (event && event.key === 'Enter') {
@@ -363,7 +365,7 @@ function handlePaginationModeChange() {
   }
   resetContainerPage()
   loadData()
-  proxy?.$message?.success('已切换为' + (paginationMode.value === 'frontend' ? '前端分页' : '后端分页'))
+  proxy.$message.success('已切换为' + (paginationMode.value === 'frontend' ? '前端分页' : '后端分页'))
 }
 
 async function loadData() {
@@ -393,7 +395,7 @@ async function loadData() {
     total.value = result.total
   } catch (error) {
     console.error(error)
-    proxy?.$message?.error('加载表格数据失败')
+    proxy.$message.error('加载表格数据失败')
   } finally {
     loading.value = false
   }
@@ -405,77 +407,77 @@ function handleSearch(params) {
 }
 
 function handleReset() {
-  proxy?.$message?.info('搜索条件已重置')
+  proxy.$message.info('搜索条件已重置')
 }
 
 function handleSelectionChange(selection) {
   if (selection && selection.length) {
-    proxy?.$message?.success('当前选中 ' + selection.length + ' 行')
+    proxy.$message.success('当前选中 ' + selection.length + ' 行')
   }
 }
 
 function getSelectedRows() {
   const rows = containerRef.value ? containerRef.value.getSelectionRows() : []
-  proxy?.$alert?.(JSON.stringify(rows, null, 2), '当前选中行', {
+  proxy.$alert(JSON.stringify(rows, null, 2), '当前选中行', {
     confirmButtonText: '知道了',
   })
 }
 
 function getSelectedKeys() {
   const keys = containerRef.value ? containerRef.value.getSelectionKeys() : []
-  proxy?.$message?.success('当前选中 ID：' + (keys.length ? keys.join(', ') : '无'))
+  proxy.$message.success('当前选中 ID：' + (keys.length ? keys.join(', ') : '无'))
 }
 
 function selectRows(ids) {
   if (!containerRef.value) return
   containerRef.value.setSelectionKeys(ids)
-  proxy?.$message?.success('已尝试选中 ID：' + ids.join(', '))
+  proxy.$message.success('已尝试选中 ID：' + ids.join(', '))
 }
 
 function clearSelection() {
   if (!containerRef.value) return
   containerRef.value.clearAllSelection()
-  proxy?.$message?.success('已清空选中状态')
+  proxy.$message.success('已清空选中状态')
 }
 
 function selectAll() {
   if (!containerRef.value) return
   containerRef.value.selectAll()
-  proxy?.$message?.success('已全选当前页')
+  proxy.$message.success('已全选当前页')
 }
 
 function checkSelection() {
   if (!containerRef.value || !tableData.value.length) return
   const firstSelected = containerRef.value.isRowSelected(tableData.value[0])
   const keySelected = containerRef.value.isKeySelected(3)
-  proxy?.$message?.info('第一行选中：' + (firstSelected ? '是' : '否') + '；ID=3 选中：' + (keySelected ? '是' : '否'))
+  proxy.$message.info('第一行选中：' + (firstSelected ? '是' : '否') + '；ID=3 选中：' + (keySelected ? '是' : '否'))
 }
 
 function handleAdd() {
-  proxy?.$message?.success('点击了新增按钮')
+  proxy.$message.success('点击了新增按钮')
 }
 
 function handleView(row) {
-  proxy?.$message?.info('查看：' + row.username)
+  proxy.$message.info('查看：' + row.username)
 }
 
 function handleEdit(row) {
-  proxy?.$message?.success('编辑：' + row.username)
+  proxy.$message.success('编辑：' + row.username)
 }
 
 function handleDelete(row) {
   if (row.status === 0) {
-    proxy?.$message?.warning('禁用状态用户不可删除')
+    proxy.$message.warning('禁用状态用户不可删除')
     return
   }
-  proxy?.$confirm?.('确认删除用户“' + row.username + '”吗？', '提示', {
+  proxy.$confirm('确认删除用户“' + row.username + '”吗？', '提示', {
     type: 'warning',
   })
-    ?.then(() => {
-      proxy?.$message?.success('已模拟删除：' + row.username)
+    .then(() => {
+      proxy.$message.success('已模拟删除：' + row.username)
       loadData()
     })
-    ?.catch(function () {})
+    .catch(function () {})
 }
 
 columns.value = createColumns({ handleView, handleEdit, handleDelete })
@@ -498,6 +500,13 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  height: 100%;
+  min-height: 0;
+}
+
+.table-demo__container {
+  flex: 1;
+  min-height: 0;
 }
 
 .table-demo__mode-card,

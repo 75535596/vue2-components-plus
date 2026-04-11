@@ -72,7 +72,7 @@ const refreshInstances = () => {
 
 const openDialog = (options = {}) => {
   if (!window.NsDialog) {
-    proxy?.$message?.error('NsDialog 尚未挂载到全局')
+    proxy.$message.error('NsDialog 尚未挂载到全局')
     return
   }
   const offset = openIndex.value * 24
@@ -139,7 +139,7 @@ const openReadonlyDialog = () => {
 
 const updateDialogOption = () => {
   if (!dialogInstances.value.length) {
-    proxy?.$message?.warning('请先打开一个弹窗')
+    proxy.$message.warning('请先打开一个弹窗')
     return
   }
   const lastInstance = dialogInstances.value[dialogInstances.value.length - 1]
@@ -150,21 +150,21 @@ const updateDialogOption = () => {
     hintText: lastReadOnly.value ? '已通过 updateOption 切换为只读。' : '已通过 updateOption 切换为编辑。',
     width: lastReadOnly.value ? '880px' : '960px',
   })
-  proxy?.$message?.success('已更新最后一个弹窗配置')
+  proxy.$message.success('已更新最后一个弹窗配置')
 }
 
 const callDialogMethod = async () => {
   if (!dialogInstances.value.length) {
-    proxy?.$message?.warning('请先打开一个弹窗')
+    proxy.$message.warning('请先打开一个弹窗')
     return
   }
   const lastInstance = dialogInstances.value[dialogInstances.value.length - 1]
   const result = await lastInstance.callMethod('getFormData')
   if (result === false) {
-    proxy?.$message?.warning('弹窗内表单还未通过校验')
+    proxy.$message.warning('弹窗内表单还未通过校验')
     return
   }
-  proxy?.$message?.success('已调用内部组件方法并获取结果')
+  proxy.$message.success('已调用内部组件方法并获取结果')
 }
 
 const closeDialog = (instance) => {
@@ -174,7 +174,7 @@ const closeDialog = (instance) => {
 }
 
 const closeAllDialogs = () => {
-  if (typeof proxy?.$closeAllNsDialog === 'function') {
+  if (typeof proxy.$closeAllNsDialog === 'function') {
     proxy.$closeAllNsDialog()
   } else if (typeof window.closeAllNsDialog === 'function') {
     window.closeAllNsDialog()
@@ -189,7 +189,7 @@ const closeAllDialogs = () => {
 
 const handleInnerButtonClick = (payload) => {
   const keys = payload ? Object.keys(payload) : []
-  proxy?.$message?.info(`收到弹窗内容事件，共 ${keys.length} 个字段`)
+  proxy.$message.info(`收到弹窗内容事件，共 ${keys.length} 个字段`)
 }
 
 onMounted(() => {
