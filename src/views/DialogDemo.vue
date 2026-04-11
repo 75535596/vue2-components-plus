@@ -13,6 +13,7 @@
       <div class="dialog-demo__actions">
         <el-button type="primary" @click="openDialog()">打开弹窗</el-button>
         <el-button @click="openReadonlyDialog">打开只读弹窗</el-button>
+        <el-button @click="openCloseOnlyDialog">打开仅关闭按钮弹窗</el-button>
         <el-button @click="openCustomShellDialog">打开自定义头底部弹窗</el-button>
         <el-button @click="updateDialogOption">更新最后一个弹窗</el-button>
         <el-button @click="callDialogMethod">调用最后一个弹窗内容方法</el-button>
@@ -163,8 +164,8 @@ const openDialog = (options = {}) => {
       dom: FormDemo,
       option: resolvedOption,
       events: baseEvents,
-      width: options.width || '960px',
-      height: options.height || '620px',
+      width: options.width || '900px',
+      height: options.height || '500px',
       dialogPadding: [10, 10],
       modal: options.modal !== undefined ? options.modal : false,
       draggable: true,
@@ -174,8 +175,8 @@ const openDialog = (options = {}) => {
         x: 0,
         y: 0,
       }),
-      x: `calc(50% - 480px + ${offset}px)`,
-      y: `calc(50% - 310px + ${offset}px)`,
+      x: `calc(50% - 450px)`,
+      y: `calc(50% - 250px)`,
       domCompleted: (domRef) => {
         if (!options.silent && domRef && typeof domRef.showToast === 'function') {
           domRef.showToast('弹窗内容已加载完成')
@@ -210,6 +211,18 @@ const openReadonlyDialog = () => {
   openDialog({
     readOnly: true,
     title: '只读预览弹窗（setup）',
+  })
+}
+
+const openCloseOnlyDialog = () => {
+  openDialog({
+    title: '仅关闭按钮弹窗',
+    option: {
+      hintText: '底部仅保留关闭按钮，回车不会触发确认逻辑。',
+    },
+    extraConfig: {
+      footerCloseOnly: true,
+    },
   })
 }
 

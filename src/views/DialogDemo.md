@@ -75,6 +75,7 @@ const instance = window.NsDialog(
 | `footerTitle` | `Object` | `{ close: '取消', confirm: '确定' }` | 默认底部按钮文案 |
 | `footerEvents` | `Object` | `{}` | 透传给 `footerDom` 的事件 |
 | `footerButtonReverse` | `Boolean` | `false` | 组件默认值为 `false`，但通过工厂创建时当前实现会强制改成 `true` |
+| `footerCloseOnly` | `Boolean` | `false` | 仅对默认底部生效；设为 `true` 时只显示关闭按钮，不显示确认按钮 |
 | `immediately` | `Boolean` | `false` | 点击确认后是否先关闭再执行 `confirm` |
 | `close` | `Function` | `null` | `el-dialog` 的 `close` 阶段回调 |
 | `closed` | `Function` | `null` | `el-dialog` 的 `closed` 阶段回调；工厂会在这里销毁实例 |
@@ -104,6 +105,7 @@ const instance = window.NsDialog(
 ### 5.3 默认确认按钮行为
 
 - 只有在 `showFooter=true` 且未传 `footerDom` 时，才会显示默认确认/取消按钮
+- 若 `footerCloseOnly=true`，默认底部只显示关闭按钮
 - 点击默认确认按钮后会执行 `dealConfirm`
 - 若未配置 `confirm`，按钮只会短暂进入 loading 后立即结束，不会自动关闭
 - 若 `confirm` 中调用了 `closeFn()`，组件会关闭，并自动弹出一次 `操作成功`
@@ -127,6 +129,7 @@ const instance = window.NsDialog(
 ### 5.6 回车行为
 
 - 当 `visible=true`、`showFooter=true`、`footerDom` 不存在时，按回车会触发默认确认逻辑
+- 当 `footerCloseOnly=true` 时，即使使用默认底部，回车也不会触发确认
 - 如果用了自定义底部组件，回车不会自动触发 `footerEvents.confirm`
 
 ## 6. `confirm` 回调签名
@@ -221,6 +224,7 @@ instance.close()
 |---|---|
 | 打开普通弹窗 | `dom + option + events` |
 | 打开只读弹窗 | `option.readOnly` |
+| 仅显示关闭按钮 | `footerCloseOnly=true` |
 | 多开错位显示 | `x / y` 动态偏移 |
 | 自定义头部 | `headerDom + headerOption` |
 | 自定义底部 | `footerDom + footerOption + footerEvents` |

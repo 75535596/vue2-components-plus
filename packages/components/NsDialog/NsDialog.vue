@@ -56,9 +56,9 @@
         v-on="mergeEvents(footerEvents)"
       />
       <template v-else>
-        <el-button v-if="footerButtonReverse" type="primary" :loading="footerLoading" @click="dealConfirm">{{ footerButtonText.confirm }}</el-button>
+        <el-button v-if="footerButtonReverse && !footerCloseOnly" type="primary" :loading="footerLoading" @click="dealConfirm">{{ footerButtonText.confirm }}</el-button>
         <el-button @click="closeDialog">{{ footerButtonText.close }}</el-button>
-        <el-button v-if="!footerButtonReverse" type="primary" :loading="footerLoading" @click="dealConfirm">{{ footerButtonText.confirm }}</el-button>
+        <el-button v-if="!footerButtonReverse && !footerCloseOnly" type="primary" :loading="footerLoading" @click="dealConfirm">{{ footerButtonText.confirm }}</el-button>
       </template>
     </div>
   </el-dialog>
@@ -154,6 +154,10 @@ export default {
       default: () => ({}),
     },
     footerButtonReverse: {
+      type: Boolean,
+      default: false,
+    },
+    footerCloseOnly: {
       type: Boolean,
       default: false,
     },
@@ -312,6 +316,7 @@ export default {
       this.triggerDomCompleted()
     })
     document.addEventListener('keydown', this.handleKeydown)
+    window.addEventListener('resize', this.applyDialogLayout)
   },
   updated() {
     this.syncDialogInstance()
@@ -322,6 +327,7 @@ export default {
   },
   beforeDestroy() {
     document.removeEventListener('keydown', this.handleKeydown)
+    window.removeEventListener('resize', this.applyDialogLayout)
     this.removeDragListeners()
     this.removeModalStyle()
   },
@@ -369,6 +375,12 @@ export default {
     applyDialogLayout() {
       const dialog = this.resolveDialogElement()
       if (!dialog) return
+      const wrapper = this.resolveWrapperElement()
+      if (wrapper) {
+        wrapper.style.display = ''
+        wrapper.style.alignItems = ''
+        wrapper.style.justifyContent = ''
+      }
       if (this.currentHeight) {
         dialog.style.height = this.normalizeSize(this.currentHeight)
         dialog.style.display = 'flex'
@@ -376,19 +388,26 @@ export default {
       } else {
         dialog.style.height = ''
       }
+      const dialogHeight = dialog.getBoundingClientRect().height
+      const centeredTop = dialogHeight >= window.innerHeight ? 20 : Math.max((window.innerHeight - dialogHeight) / 2, 0)
       if (this.hasAbsolutePosition) {
         dialog.style.position = 'fixed'
         dialog.style.margin = '0'
         if (this.currentX !== null) {
           dialog.style.left = this.normalizeSize(this.currentX)
+        } else {
+          dialog.style.left = ''
         }
         if (this.currentY !== null) {
           dialog.style.top = this.normalizeSize(this.currentY)
+        } else {
+          dialog.style.top = `${centeredTop}px`
         }
       } else {
-        dialog.style.position = ''
+        dialog.style.position = 'relative'
         dialog.style.left = ''
-        dialog.style.top = ''
+        dialog.style.top = `${centeredTop}px`
+        dialog.style.margin = '0 auto'
       }
     },
     updateModalStyle() {
@@ -522,7 +541,7 @@ export default {
     },
     handleKeydown(event) {
       if (!this.visible || !this.showFooter) return
-      if (event.key === 'Enter' && !this.footerDom) {
+      if (event.key === 'Enter' && !this.footerDom && !this.footerCloseOnly) {
         event.preventDefault()
         this.dealConfirm()
       }
