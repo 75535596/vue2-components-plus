@@ -176,7 +176,7 @@ export default {
 }
 
 .demo-layout__main {
-  padding: 24px;
+  padding: 0;
   overflow: auto;
 }
 </style>

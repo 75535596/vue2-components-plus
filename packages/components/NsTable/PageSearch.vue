@@ -1,7 +1,7 @@
 <template>
   <div class="page-search">
     <el-form ref="formRef" :inline="true" :model="formData" v-bind="$attrs" class="page-search__form">
-      <el-row :gutter="16">
+      <el-row :gutter="16" type="flex" class="page-search__row">
         <el-col
           v-for="(item, index) in visibleItems"
           :key="item.prop || index"
@@ -229,6 +229,11 @@ export default {
 
 .page-search__form {
   width: 100%;
+}
+
+.page-search__row {
+  flex-wrap: wrap;
+  align-items: flex-start;
 }
 
 .page-search__form /deep/ .el-form-item {
