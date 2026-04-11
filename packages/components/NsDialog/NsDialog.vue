@@ -513,6 +513,15 @@ export default {
       }
     },
     dealConfirm() {
+      const vm = this
+      const loadingController = {
+        get value() {
+          return vm.footerLoading
+        },
+        set value(nextValue) {
+          vm.footerLoading = !!nextValue
+        },
+      }
       this.footerLoading = true
       if (!this.confirm) {
         this.footerLoading = false
@@ -531,12 +540,7 @@ export default {
           this.$message && this.$message.success && this.$message.success('操作成功')
         },
         this.$refs.contentRef,
-        {
-          value: this.footerLoading,
-          set value(nextValue) {
-            this.footerLoading = nextValue
-          },
-        },
+        loadingController,
       )
     },
     handleKeydown(event) {

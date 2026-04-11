@@ -22,13 +22,14 @@
 
 ```vue
 <template>
-  <el-form ref="shellForm" :model="state" label-position="top">
+  <el-form ref="shellForm" :model="state">
     <NsFormTitle title="基础信息">
       <NsForm
         ref="formRef"
         :rows="state.rows"
         formPropKey="rows"
         model="vertical"
+        :labelPosition="labelPosition"
         labelWidth="120"
         gapH="16px"
         gapV="12px"
@@ -41,6 +42,7 @@
 import { reactive, ref } from 'vue'
 
 const formRef = ref(null)
+const labelPosition = ref('left')
 
 const state = reactive({
   rows: [
@@ -86,6 +88,14 @@ const state = reactive({
 | `valueEmptyTag` | `String` | `'--'` | 空值占位 |
 | `formPropKey` | `String` | `'rows'` | 生成内部 `el-form-item.prop` 的前缀 |
 | `hasPoint` | `Boolean` | `false` | 是否统一显示红色星号 |
+| `labelPosition` | `String` | `'left'` | 标签方向，支持 `left / top / right` |
+
+### 4.1 `labelPosition` 说明
+
+- 该属性控制的是 `NsForm` 自己渲染的标签布局，不是外层 `el-form-item` 的标签布局
+- 支持值为 `left`、`top`、`right`
+- 默认值是 `left`
+- 当使用 `top` 时，标签会显示在字段内容上方
 
 ## 5. `rows` 数据结构
 
@@ -290,6 +300,7 @@ field.slots = {
 | 上传字段 | `value + params.fileList + delValue` |
 | 联动字段 | `events.change` |
 | 只读切换 | `readOnly` + `params.formatter` |
+| 标签方向 | `labelPosition` 在 `left / top / right` 间切换 |
 | 数据操作 | `getFormKvData / setFormData / resetForm` |
 | 节点访问 | `getFormNodeByKey / getFormNodeRefByKey` |
 
@@ -301,6 +312,7 @@ field.slots = {
 - 自定义指令统一放在 `params['v-xxx']`
 - 上传场景必须同步维护 `value` 和 `params.fileList`
 - 联动逻辑优先写在 `field.events.change`
+- 需要控制标签方向时，优先使用 `NsForm.labelPosition`，不要依赖外层 `el-form` 的 `label-position`
 - 不要把 `initDefaultValues()` 当成“强制重建全部默认值”的方法
 
 ## 15. 推荐 Prompt
@@ -312,7 +324,7 @@ field.slots = {
 3) 每个字段遵循 key、label、value、component、params、events 结构；
 4) 演示 params.options、params.rules、params.formatter、params['v-length.range']；
 5) 演示 getFormKvData、setFormData、resetForm(true)、getFormNodeByKey、getFormNodeRefByKey；
-6) 演示 readOnly 切换；
+6) 演示 readOnly 与 labelPosition(left/top/right) 切换；
 7) 代码风格与当前仓库一致，不使用 TS，不虚构不存在的方法。
 ```
 
@@ -320,7 +332,7 @@ field.slots = {
 
 ```vue
 <template>
-  <el-form ref="shellForm" :model="state" label-position="top">
+  <el-form ref="shellForm" :model="state">
     <NsFormTitle title="基础信息">
       <NsForm
         ref="formRef"
@@ -328,6 +340,7 @@ field.slots = {
         formPropKey="rows"
         model="vertical"
         :readOnly="readOnly"
+        :labelPosition="labelPosition"
         labelWidth="120"
         gapH="16px"
         gapV="12px"
@@ -349,6 +362,7 @@ import { reactive, ref, nextTick } from 'vue'
 const shellForm = ref(null)
 const formRef = ref(null)
 const readOnly = ref(false)
+const labelPosition = ref('left')
 
 const state = reactive({
   rows: [

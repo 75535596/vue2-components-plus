@@ -192,6 +192,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    labelPosition: {
+      type: String,
+      default: 'left',
+    },
   },
   data() {
     return {
@@ -200,11 +204,18 @@ export default {
   },
   computed: {
     formClassList() {
+      const labelPosition = this.normalizedLabelPosition
       return {
         'is-vertical': this.model.indexOf('vertical') > -1,
         'is-table': this.model.indexOf('table') > -1,
         'is-readonly': this.readOnly,
+        'is-label-left': labelPosition === 'left',
+        'is-label-right': labelPosition === 'right',
+        'is-label-top': labelPosition === 'top',
       }
+    },
+    normalizedLabelPosition() {
+      return ['left', 'right', 'top'].includes(this.labelPosition) ? this.labelPosition : 'left'
     },
     wrapperStyle() {
       return {
@@ -226,12 +237,14 @@ export default {
       return {
         width: this.normalizeSize(this.labelWidth),
         color: this.labelColor,
+        textAlign: this.normalizedLabelPosition === 'right' ? 'right' : 'left',
       }
     },
     groupLabelStyle() {
       return {
         width: this.normalizeSize(this.superLabelWidth),
         color: this.labelColor,
+        textAlign: this.normalizedLabelPosition === 'right' ? 'right' : 'left',
       }
     },
     valueStyle() {
@@ -567,6 +580,21 @@ export default {
 .ns-dynamic-form__group-label {
   width: var(--ns-form-super-label-width);
   color: var(--ns-form-label-color);
+}
+
+.ns-dynamic-form.is-label-top .ns-dynamic-form__item,
+.ns-dynamic-form.is-label-top .ns-dynamic-form__child {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.ns-dynamic-form.is-label-top .ns-dynamic-form__label,
+.ns-dynamic-form.is-label-top .ns-dynamic-form__group-label {
+  width: 100%;
+  min-height: auto;
+  line-height: 1.5;
+  margin-bottom: 6px;
+  padding-right: 0;
 }
 
 .ns-dynamic-form__label.has-point::before {

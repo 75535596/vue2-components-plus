@@ -147,18 +147,18 @@ const openDialog = (options = {}) => {
     class: 'dialog-demo-instance',
     dom: FormDemo,
     width: options.width || '900px',
-    height: options.height || '500px',
+    height: options.height || '1500px',
     dialogPadding: [10, 10],
     modal: options.modal !== undefined ? options.modal : false,
     draggable: true,
-    maxSize: () => ({
-      width: '100%',
-      height: '100%',
-      x: 0,
-      y: 0,
-    }),
-    x: `calc(50% - 450px)`,
-    y: `calc(50% - 250px)`,
+    // maxSize: () => ({
+    //   width: '100%',
+    //   height: '100%',
+    //   x: 0,
+    //   y: 0,
+    // }),
+    // x: `calc(50% - 450px)`,
+    // y: `calc(50% - 250px)`,
     option: {
       readOnly,
       insideDialog: true,
@@ -174,9 +174,19 @@ const openDialog = (options = {}) => {
         domRef.showToast('弹窗内容已加载完成')
       }
     },
-    confirm: (closeFn, componentRef) => {
+    confirm: async (closeFn, componentRef, loading) => {
       if (componentRef && typeof componentRef.showToast === 'function') {
         componentRef.showToast('点击了弹窗底部确认按钮')
+      }
+      let validateResult = true
+      if (componentRef && typeof componentRef.getFormData === 'function') {
+        validateResult = await componentRef.getFormData()
+      }
+      if (validateResult === false) {
+        if (loading && Object.prototype.hasOwnProperty.call(loading, 'value')) {
+          loading.value = false
+        }
+        return
       }
       setTimeout(() => {
         if (typeof closeFn === 'function') {

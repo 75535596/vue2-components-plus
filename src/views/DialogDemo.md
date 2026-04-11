@@ -80,7 +80,7 @@ const instance = window.NsDialog(
 | `close` | `Function` | `null` | `el-dialog` 的 `close` 阶段回调 |
 | `closed` | `Function` | `null` | `el-dialog` 的 `closed` 阶段回调；工厂会在这里销毁实例 |
 | `draggable` | `Boolean` | `false` | 是否允许拖拽标题栏 |
-| `confirm` | `Function` | `null` | 点击默认确认按钮时的回调 |
+| `confirm` | `Function` | `null` | 点击默认确认按钮时的回调，签名为 `(closeFn, contentRef, loadingProxy)` |
 | `x` | `Number \| String` | `null` | 固定定位 `left` |
 | `y` | `Number \| String` | `null` | 固定定位 `top` |
 | `maxSize` | `Function` | `null` | 存在时显示最大化按钮，函数返回最大化后的宽高坐标 |
@@ -108,6 +108,7 @@ const instance = window.NsDialog(
 - 若 `footerCloseOnly=true`，默认底部只显示关闭按钮
 - 点击默认确认按钮后会执行 `dealConfirm`
 - 若未配置 `confirm`，按钮只会短暂进入 loading 后立即结束，不会自动关闭
+- 若配置了 `confirm` 且不调用 `closeFn()`，需要在业务侧手动 `loadingProxy.value = false` 结束 loading
 - 若 `confirm` 中调用了 `closeFn()`，组件会关闭，并自动弹出一次 `操作成功`
 
 ### 5.4 `immediately=true` 的真实行为
@@ -137,13 +138,13 @@ const instance = window.NsDialog(
 ### 6.1 常规模式
 
 ```js
-confirm(closeFn, contentRef, loadingProxy) {
-  return Promise.resolve(contentRef.getFormData()).then((data) => {
-    if (!data) {
-      return
-    }
-    closeFn()
-  })
+confirm: async (closeFn, contentRef, loadingProxy) => {
+  const data = await contentRef.getFormData()
+  if (!data) {
+    loadingProxy.value = false
+    return
+  }
+  closeFn()
 }
 ```
 
@@ -153,13 +154,14 @@ confirm(closeFn, contentRef, loadingProxy) {
 |---|---|
 | `closeFn` | 调用后关闭弹窗，仅在 `immediately=false` 时有意义 |
 | `contentRef` | 内容组件实例，可调用其公开方法 |
-| `loadingProxy` | 当前实现意图上用于控制确认按钮 loading，但只有常规模式下才会传入 |
+| `loadingProxy` | 可读写对象，使用 `loadingProxy.value = false` 可在校验失败时取消确认按钮 loading（仅在 `immediately=false` 时传入） |
 
 ### 6.3 更稳妥的生成策略
 
 - 如果需要异步校验后再关闭，用 `immediately=false`
 - 内容组件应暴露公开方法，例如 `getFormData`
 - 让 `confirm` 只负责校验、提交和决定是否调用 `closeFn`
+- 在校验失败或捕获异常时，显式设置 `loadingProxy.value = false`
 - 不要假设 `confirm` 返回 Promise 后会被组件自动等待；当前实现不会自动处理返回值
 
 ## 7. 实例对象能力
@@ -293,9 +295,10 @@ const openDialog = () => {
           console.log('内容组件事件', payload)
         },
       },
-      confirm: async (closeFn, contentRef) => {
+      confirm: async (closeFn, contentRef, loadingProxy) => {
         const result = await contentRef.getFormData()
         if (!result) {
+          loadingProxy.value = false
           return
         }
         closeFn()

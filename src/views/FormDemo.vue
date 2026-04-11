@@ -31,8 +31,16 @@
         <el-button @click="notifyInnerButton">触发自定义事件</el-button>
         <el-button v-if="insideDialog" type="danger" plain @click="emit('close')">从内容区关闭弹窗</el-button>
       </div>
+      <div class="toolbar toolbar--compact">
+        <span class="toolbar__label">标签方向</span>
+        <el-radio-group v-model="labelPosition" size="small">
+          <el-radio-button label="left">left</el-radio-button>
+          <el-radio-button label="top">top</el-radio-button>
+          <el-radio-button label="right">right</el-radio-button>
+        </el-radio-group>
+      </div>
 
-      <el-form ref="shellForm" :model="formState" label-position="top" class="shell-form">
+      <el-form ref="shellForm" :model="formState" class="shell-form">
         <NsFormTitle title="模型参数">
           <NsForm
             ref="row1Ref"
@@ -44,7 +52,8 @@
             labelColor="#606266"
             labelWidth="140"
             gapH="20px"
-            gapV="10px"
+            gapV="20px"
+            :labelPosition="labelPosition"
           />
         </NsFormTitle>
 
@@ -59,7 +68,8 @@
             labelColor="#606266"
             labelWidth="140"
             gapH="20px"
-            gapV="10px"
+            gapV="20px"
+            :labelPosition="labelPosition"
           />
         </NsFormTitle>
 
@@ -74,7 +84,8 @@
             labelColor="#606266"
             labelWidth="140"
             gapH="20px"
-            gapV="10px"
+            gapV="20px"
+            :labelPosition="labelPosition"
           />
         </NsFormTitle>
 
@@ -89,7 +100,8 @@
             labelColor="#606266"
             labelWidth="140"
             gapH="20px"
-            gapV="10px"
+            gapV="20px"
+            :labelPosition="labelPosition"
           />
         </NsFormTitle>
 
@@ -104,7 +116,8 @@
             labelColor="#606266"
             labelWidth="140"
             gapH="20px"
-            gapV="10px"
+            gapV="20px"
+            :labelPosition="labelPosition"
           />
         </NsFormTitle>
       </el-form>
@@ -223,34 +236,28 @@ function createRows() {
     ],
     [
       {
-        label: '推理策略',
-        span: 24,
-        children: [
-          {
-            key: 'inferMode',
-            label: '推理模式',
-            value: 'fast',
-            component: 'ElSelect',
-            params: {
-              clearable: true,
-              options: [
-                { label: '快速', value: 'fast' },
-                { label: '平衡', value: 'balanced' },
-                { label: '高精度', value: 'accurate' },
-              ],
-            },
-          },
-          {
-            key: 'batchSize',
-            label: '批量大小',
-            value: '1',
-            component: 'ElInput',
-            params: {
-              clearable: true,
-              'v-length.range': { min: 1, max: 16, int: true },
-            },
-          },
-        ],
+        key: 'inferMode',
+        label: '推理模式',
+        value: 'fast',
+        component: 'ElSelect',
+        params: {
+          clearable: true,
+          options: [
+            { label: '快速', value: 'fast' },
+            { label: '平衡', value: 'balanced' },
+            { label: '高精度', value: 'accurate' },
+          ],
+        },
+      },
+      {
+        key: 'batchSize',
+        label: '批量大小',
+        value: '1',
+        component: 'ElInput',
+        params: {
+          clearable: true,
+          'v-length.range': { min: 1, max: 16, int: true },
+        },
       },
     ],
   ]
@@ -528,6 +535,7 @@ function createDetailData() {
 }
 
 const demoReadOnly = ref(props.readOnly)
+const labelPosition = ref('left')
 const outputText = ref('')
 const uploadFileList = ref([])
 const formState = reactive({
@@ -887,6 +895,15 @@ defineExpose({
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+.toolbar--compact {
+  margin-top: -8px;
+}
+
+.toolbar__label {
+  font-size: 13px;
+  color: #606266;
 }
 
 .shell-form {
