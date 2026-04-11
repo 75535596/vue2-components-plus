@@ -51,8 +51,8 @@
             backgroundColor="#fff"
             labelColor="#606266"
             labelWidth="140"
-            gapH="20"
-            gapV="20"
+            gapH="0"
+            gapV="0"
             :labelPosition="labelPosition"
           />
         </NsFormTitle>

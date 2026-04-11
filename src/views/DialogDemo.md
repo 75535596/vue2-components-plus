@@ -74,7 +74,7 @@ const instance = window.NsDialog(
 | `footerOption` | `Object` | `{}` | 透传给 `footerDom` 的 props |
 | `footerTitle` | `Object` | `{ close: '取消', confirm: '确定' }` | 默认底部按钮文案 |
 | `footerEvents` | `Object` | `{}` | 透传给 `footerDom` 的事件 |
-| `footerButtonReverse` | `Boolean` | `false` | 组件默认值为 `false`，但通过工厂创建时当前实现会强制改成 `true` |
+| `footerButtonReverse` | `Boolean` | `false` | 仅对默认底部按钮顺序生效：`true`=确认在左、取消在右；`false`=取消在左、确认在右。当前工厂创建时会强制为 `true` |
 | `footerCloseOnly` | `Boolean` | `false` | 仅对默认底部生效；设为 `true` 时只显示关闭按钮，不显示确认按钮 |
 | `immediately` | `Boolean` | `false` | 点击确认后是否先关闭再执行 `confirm` |
 | `close` | `Function` | `null` | `el-dialog` 的 `close` 阶段回调 |
@@ -86,6 +86,24 @@ const instance = window.NsDialog(
 | `maxSize` | `Function` | `null` | 存在时显示最大化按钮，函数返回最大化后的宽高坐标 |
 | `store` | `Object` | `null` | 注入给动态实例的 Vuex store |
 | `pinia` | `Object` | `null` | 注入给动态实例的 Pinia 实例 |
+
+### 4.1 易混淆字段详解（中文）
+
+| 字段 | 详细说明 | 常见误区 |
+|---|---|---|
+| `option` | 透传给内容组件的 props，等价于 `<component v-bind="option" />` | 不是 NsDialog 自己的 props，不会直接改弹窗壳子 |
+| `events` | 透传给内容组件的事件对象，等价于 `<component v-on="events" />`，且内部会自动合并一个 `close` 事件 | 以为必须自己传 `close`；实际上组件已注入 |
+| `showFooter` | 控制底部区域是否整体显示 | 设为 `false` 后，默认按钮和自定义 footer 都不会出现 |
+| `footerDom` | 自定义底部组件；一旦提供，默认取消/确定按钮不再渲染 | 以为还能同时显示默认按钮；实际二选一 |
+| `footerTitle` | 仅影响默认底部按钮文案，不影响自定义 `footerDom` | 给了 `footerDom` 后再改 `footerTitle` 不会生效 |
+| `footerEvents` | 仅透传给 `footerDom` 的事件，默认按钮不会读取这里的 `confirm` | 以为能通过 `footerEvents.confirm` 控制默认确认按钮 |
+| `footerButtonReverse` | 仅控制默认按钮顺序：`true`=确定在左，`false`=确定在右 | 以为会影响自定义 `footerDom`；不会 |
+| `footerCloseOnly` | 仅默认底部生效；`true` 时只渲染取消按钮 | 以为会隐藏自定义 footer；不会 |
+| `immediately` | 默认确认按钮点击后是否先关窗再执行 `confirm` | 设为 `true` 时 `confirm` 拿不到 `loadingProxy` |
+| `confirm` | 默认确认按钮回调；建议手动控制 `closeFn` 与 loading 状态 | 以为 return Promise 就会自动关窗；当前实现不会自动等待 |
+| `close` / `closed` | 分别对应 `el-dialog` 的 `close` 和 `closed` 生命周期 | 误把资源释放写在 `close`；更稳妥放在 `closed` |
+| `x` / `y` | 传任一项就切换为 fixed 定位，支持数字和带单位字符串 | 只传 `x` 不传 `y` 时，`y` 会按居中 top 自动计算 |
+| `maxSize` | 传函数才显示最大化按钮，函数返回 `{ width, height, x, y }` | 以为是布尔开关；实际必须是函数 |
 
 ## 5. 核心行为
 
@@ -105,13 +123,25 @@ const instance = window.NsDialog(
 ### 5.3 默认确认按钮行为
 
 - 只有在 `showFooter=true` 且未传 `footerDom` 时，才会显示默认确认/取消按钮
+- `footerButtonReverse=true` 时顺序是「确定 | 取消」，`footerButtonReverse=false` 时顺序是「取消 | 确定」
+- 通过 `window.NsDialog(...)` 工厂创建时，当前实现会把 `footerButtonReverse` 强制设为 `true`
 - 若 `footerCloseOnly=true`，默认底部只显示关闭按钮
 - 点击默认确认按钮后会执行 `dealConfirm`
 - 若未配置 `confirm`，按钮只会短暂进入 loading 后立即结束，不会自动关闭
 - 若配置了 `confirm` 且不调用 `closeFn()`，需要在业务侧手动 `loadingProxy.value = false` 结束 loading
 - 若 `confirm` 中调用了 `closeFn()`，组件会关闭，并自动弹出一次 `操作成功`
 
-### 5.4 `immediately=true` 的真实行为
+### 5.4 底部按钮显示矩阵（默认底部）
+
+仅在 `showFooter=true` 且 `footerDom` 未传时适用：
+
+| 条件 | 显示结果 |
+|---|---|
+| `footerCloseOnly=true` | 仅显示「取消」按钮 |
+| `footerCloseOnly=false` 且 `footerButtonReverse=true` | 显示「确定 | 取消」 |
+| `footerCloseOnly=false` 且 `footerButtonReverse=false` | 显示「取消 | 确定」 |
+
+### 5.5 `immediately=true` 的真实行为
 
 这一点是 AI 生成代码最容易写错的地方。
 
@@ -120,14 +150,14 @@ const instance = window.NsDialog(
 - 当前实现不会传入第三个 `loadingProxy`
 - 因为弹窗已经先关闭，所以 `immediately=true` 更适合“无需等待结果、触发即关”的场景
 
-### 5.5 拖拽、定位、最大化
+### 5.6 拖拽、定位、最大化
 
 - `draggable=true` 时，只有标题栏可拖拽
 - 只要传了 `x` 或 `y`，弹窗就改为 `position: fixed`
 - 最大化按钮是否显示，不取决于单独开关，而是取决于 `maxSize` 是否为函数
 - `maxSize()` 返回的对象支持 `width`、`height`、`x`、`y`
 
-### 5.6 回车行为
+### 5.7 回车行为
 
 - 当 `visible=true`、`showFooter=true`、`footerDom` 不存在时，按回车会触发默认确认逻辑
 - 当 `footerCloseOnly=true` 时，即使使用默认底部，回车也不会触发确认
