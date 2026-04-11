@@ -3,8 +3,8 @@
     <el-card shadow="never" class="dialog-demo__card">
       <div slot="header" class="dialog-demo__header">
         <div>
-          <div class="dialog-demo__title">NsDialog 预览（&lt;script setup&gt; 版）</div>
-          <div class="dialog-demo__desc">Vue2.7 + &lt;script setup&gt; 写法：演示多开、更新配置、调用内部方法、关闭单个与全部弹窗。</div>
+          <div class="dialog-demo__title">多实例与方法调用面板</div>
+          <div class="dialog-demo__desc">Vue2.7 + &lt;script setup&gt;：演示多开、更新配置、调用内部方法、关闭单个与全部弹窗。</div>
 
         </div>
         <el-tag size="small" type="success">当前 {{ dialogInstances.length }} 个实例</el-tag>

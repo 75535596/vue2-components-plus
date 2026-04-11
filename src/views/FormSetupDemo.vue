@@ -3,7 +3,7 @@
     <el-card shadow="never" class="demo-card">
       <div slot="header" class="demo-card__header">
         <div>
-          <div class="demo-card__title">NsForm 动态表单预览（&lt;script setup&gt; 版）</div>
+          <div class="demo-card__title">表单场景能力面板</div>
           <div class="demo-card__desc">覆盖校验、回填、只读、级联、上传和动态表单项等常见场景，使用 &lt;script setup&gt; 写法。</div>
 
         </div>

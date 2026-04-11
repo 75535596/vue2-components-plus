@@ -1,7 +1,5 @@
 <template>
   <div style="padding: 20px;">
-    <h1>自定义指令演示 Demo</h1>
-
     <!-- v-sline 指令演示 -->
     <div class="demo-section">
       <h2>1. v-sline 指令 - 单行文本溢出省略</h2>
