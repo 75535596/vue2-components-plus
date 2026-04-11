@@ -1,18 +1,19 @@
 # 自定义指令使用说明（`v-sline` / `v-length` / `v-permission` / `v-event-unuse` / `v-event-use`）
 
-本文档对应 `packages/directives/index.js` 的当前实现，适合 AI 直接生成指令使用代码。
+本文档严格对应 `packages/directives/index.js` 的当前实现，重点是帮助 AI 生成“可运行、不过度脑补、行为符合源码”的 Vue2 页面代码。
 
-## 1. 组件与入口
+## 1. 入口与注册方式
 
-| 组件/入口 | 路径 |
+当前仓库的所有自定义指令都定义在同一个文件中：
+
+| 入口 | 路径 |
 |---|---|
-| 主入口 | `packages/directives/index.js` |
-| 指令实现 | `packages/directives/directives/` |
-| 注册插件 | `packages/directives/index.js` 导出 `Vue2ComponentsPlus` 插件 |
+| 指令注册函数 | `packages/directives/index.js` |
+| 导出函数 | `registerDirective(Vue)` |
 
-注册方式见下方第 2 节。
+推荐注册方式有两种。
 
-推荐方式是安装组件库插件，指令会自动注册：
+### 1.1 安装整库插件
 
 ```js
 import Vue from 'vue'
@@ -21,237 +22,276 @@ import Vue2ComponentsPlus from 'vue2-components-plus'
 Vue.use(Vue2ComponentsPlus)
 ```
 
-如果你在本仓库源码环境里单独注册指令，可使用：
+### 1.2 在源码环境中单独注册
 
 ```js
+import Vue from 'vue'
 import { registerDirective } from '../../packages/directives'
+
 registerDirective(Vue)
 ```
 
-## 2. v-sline：单行省略
+## 2. 指令总览
 
-### 2.1 作用
+| 指令 | 作用 | 是否有修饰符 |
+|---|---|---|
+| `v-sline` | 单行省略 | 否 |
+| `v-length` | 输入限制 | 是 |
+| `v-permission` | 权限显示控制 | 是 |
+| `v-event-unuse` | 禁用指针事件 | 否 |
+| `v-event-use` | 恢复指针事件 | 否 |
 
-- 自动设置：
-  - `white-space: nowrap`
-  - `overflow: hidden`
-  - `text-overflow: ellipsis`
-  - `display: inline-block`
-  - `max-width: 100%`
+## 3. `v-sline`
 
-### 2.2 用法
+### 3.1 作用
+
+绑定后会直接给元素写入以下样式：
+
+- `white-space: nowrap`
+- `overflow: hidden`
+- `text-overflow: ellipsis`
+- `display: inline-block`
+- `max-width: 100%`
+
+### 3.2 用法
 
 ```vue
 <span v-sline>{{ longText }}</span>
 ```
 
-### 2.3 参数/修饰符
+### 3.3 适用场景
 
-- 无参数，无修饰符。
+- 表格单元格长文本
+- 只读详情页文本
+- 表单只读态字段展示
 
-## 3. v-length：输入限制（核心）
+## 4. `v-length`
 
-`v-length` 通过监听 input/composition 事件限制输入内容，兼容中文输入法（组合输入阶段不截断）。
+`v-length` 是当前指令里最核心的一个。它会监听 `input`、`compositionstart`、`compositionend`，对中文输入法场景友好，不会在拼音组合输入过程中强行截断。
 
-### 3.1 基础模式
+### 4.1 绑定目标
+
+- 可以直接绑在原生 `input` / `textarea`
+- 也可以绑在组件根节点，内部会自动寻找 `input, textarea`
+- 对 `Element UI` 的 `el-input` 可直接使用
+
+### 4.2 基础写法
 
 ```vue
-<el-input v-model="name" v-length="20" />
+<el-input v-model="form.name" v-length="20" />
 ```
 
-- 含义：最多 20 字符。
+含义：最多 20 个字符。
 
-### 3.2 支持的修饰符
+### 4.3 修饰符
 
 | 修饰符 | 说明 |
 |---|---|
-| `.number` | 仅允许数字（可负号、小数点，长度限制） |
+| `.number` | 仅允许数字、首位负号、一个小数点 |
 | `.regex` | 按正则逐字符校验 |
-| `.range` | 数值范围限制，支持整数模式 |
+| `.range` | 数值范围约束，可配合 `int: true` 实现整数模式 |
 
-### 3.3 `binding.value` 结构
+### 4.4 `binding.value` 配置结构
 
 | 字段 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
-| `maxLength` | `Number` | `50` | 最大输入长度 |
-| `pattern` | `RegExp` | `null` | `.regex` 使用 |
+| `maxLength` | `Number` | `50` | 最大长度 |
+| `pattern` | `RegExp` | `null` | `.regex` 模式使用 |
 | `min` | `Number` | `null` | `.range` 最小值 |
 | `max` | `Number` | `null` | `.range` 最大值 |
-| `int` | `Boolean` | `false` | `.range` 下是否仅整数 |
+| `int` | `Boolean` | `false` | `.range` 时是否仅允许整数 |
 
-### 3.4 示例
+### 4.5 典型写法
 
 ```vue
-<el-input v-model="mobile" v-length.number="11" />
-<el-input v-model="code" v-length.regex="{ maxLength: 6, pattern: /^[A-Z0-9]*$/ }" />
-<el-input v-model="score" v-length.range="{ min: 0, max: 100 }" />
-<el-input v-model="age" v-length.range="{ min: 1, max: 120, int: true, maxLength: 3 }" />
+<el-input v-model="form.mobile" v-length.number="11" />
+<el-input v-model="form.code" v-length.regex="{ maxLength: 6, pattern: /^[A-Z0-9]*$/ }" />
+<el-input v-model="form.score" v-length.range="{ min: 0, max: 100 }" />
+<el-input v-model="form.age" v-length.range="{ min: 1, max: 120, int: true, maxLength: 3 }" />
 ```
 
-### 3.5 行为细节
+### 4.6 当前实现的真实行为
 
-- 绑定元素可为原生 `input/textarea`，也可为组件根节点（内部自动查找 input）。
-- 值被修正后会主动触发一次 `input` 事件，确保 `v-model` 同步。
-- `.range` 超出范围时会直接裁剪到边界值。
-- `.number` 允许负号和小数点；如需仅整数请用 `.range` 且 `int: true`。
-- `.regex` 是按"逐字符"检查，`pattern` 需允许中间态（例如 `^[A-Z0-9]*$`）。
+- 值被修正后，会主动派发一次原生 `input` 事件，确保 `v-model` 同步
+- `.number` 允许负号和小数点，不会自动限制为正整数
+- `.range` 超出范围时会直接钳制到边界值
+- `.range + int: true` 时只允许整数，是否允许负号取决于 `min < 0`
+- `.regex` 是“逐字符累积校验”，`pattern` 必须允许中间态
 
-## 4. v-permission：权限控制
+### 4.7 `.regex` 模式注意事项
 
-权限来源：`sessionStorage.btnsPermission`，若无则读 `localStorage.btnsPermission`。
+为了让 AI 生成稳定代码，必须遵守下面两点：
 
-### 4.1 匹配模式
+- 正则不要使用全局 `g` 修饰符
+- 正则应允许中间输入状态，例如验证码可写成 `^[A-Z0-9]*$`，不要写必须一次成型的表达式
+
+## 5. `v-permission`
+
+### 5.1 权限来源
+
+权限列表读取顺序如下：
+
+1. `sessionStorage.getItem('btnsPermission')`
+2. `localStorage.getItem('btnsPermission')`
+3. 默认空数组
+
+权限数据要求是 JSON 数组，每个元素是字符串。
+
+```js
+sessionStorage.setItem('btnsPermission', JSON.stringify(['add_btn', 'export_btn', 'admin-btn']))
+```
+
+### 5.2 匹配模式
 
 | 写法 | 匹配依据 |
 |---|---|
-| `v-permission` / `v-permission.id` | 元素 `id` 是否在权限列表中 |
-| `v-permission.class` | 元素 classList 是否包含权限项 |
+| `v-permission` | 按元素 `id` 匹配 |
+| `v-permission.id` | 按元素 `id` 匹配 |
+| `v-permission.class` | 按元素 `classList` 匹配 |
 
-### 4.2 无权限表现
+### 5.3 无权限时的表现
 
-| 修饰符 | 行为 |
+| 写法 | 无权限效果 |
 |---|---|
-| 默认 | `visibility:hidden` + `pointer-events:none` |
-| `.display` | `display:none` |
+| `v-permission` / `v-permission.id` | `visibility: hidden` 且 `pointer-events: none` |
+| `v-permission.display` / `v-permission.id.display` / `v-permission.class.display` | `display: none` |
 
-### 4.3 示例
+### 5.4 示例
 
 ```vue
-<el-button id="add_btn" v-permission>新增</el-button>
+<el-button id="add_btn" v-permission type="primary">新增</el-button>
 <el-button id="export_btn" v-permission.id.display>导出</el-button>
 <el-button class="admin-btn" v-permission.class>管理员入口</el-button>
 ```
 
-## 5. v-event-unuse / v-event-use：事件穿透控制
+### 5.5 当前实现限制
 
-### 5.1 行为
+- 权限只在 `inserted` 时检查一次，不会自动响应后续权限数据变化
+- 如果权限列表改变，需要刷新页面或重新渲染元素
+- 使用 `id` 模式时，元素必须真的写上稳定 `id`
+- 使用 `class` 模式时，匹配逻辑是“权限值是否存在于当前元素 classList 中”
 
-| 指令 | 效果 |
+## 6. `v-event-unuse` / `v-event-use`
+
+### 6.1 行为
+
+| 指令 | 结果 |
 |---|---|
 | `v-event-unuse` | `pointer-events: none` |
 | `v-event-use` | `pointer-events: auto` |
 
-### 5.2 示例
+### 6.2 典型组合
 
 ```vue
 <div v-event-unuse>
-  父区域不可交互
-  <div v-event-use>子区域恢复交互</div>
+  <div v-event-use @click="handleChildClick">子区域恢复交互</div>
 </div>
 ```
 
-## 6. v-permission 权限数据来源
+### 6.3 适合场景
 
-权限数据存储在 `sessionStorage.btnsPermission`（优先）或 `localStorage.btnsPermission`。
+- 蒙层区域透传点击
+- 父容器禁用交互、局部按钮恢复交互
+- 自定义卡片覆盖层
 
-数据结构为 JSON 数组，元素为权限标识字符串。
+## 7. Demo 覆盖内容
 
-```js
-// 权限注入示例
-sessionStorage.setItem('btnsPermission', JSON.stringify(['add_btn', 'edit_btn', 'delete_btn', 'admin-btn']))
+`src/views/DirectivesDemo.vue` 建议覆盖以下几类能力，AI 生成页面时也应尽量完整体现：
 
-// 检查权限的匹配逻辑
-// v-permission / v-permission.id → 匹配元素 id
-// v-permission.class → 匹配元素 classList
-```
+| 模块 | 建议覆盖点 |
+|---|---|
+| 省略 | 固定宽度容器中的长文本 |
+| 输入限制 | 普通限长、数字、正则、区间、整数区间 |
+| 权限 | `id` 模式、`class` 模式、`display` 模式 |
+| 事件穿透 | 父级禁用、子级恢复 |
 
-## 7. AI 生成代码建议
+## 8. AI 生成代码规则
 
-- 生成表单时，数值输入优先使用 `v-length.range`，避免后端收到非法文本。
-- 权限控制推荐统一规范：按钮必须有稳定 `id` 或权限 class。
-- `v-permission` 是插入时计算，不会自动响应权限数组变化；权限切换后需刷新或重渲染。
-- 对中文输入场景，不要用简单 `substring` 替代 `v-length`，否则会破坏输入体验。
+- `v-length` 优先用在 `el-input` 上，不要自己重复造截断逻辑
+- 数值输入优先使用 `v-length.range`
+- 权限按钮必须显式写 `id` 或稳定 class
+- `.regex` 模式下不要使用带 `g` 的正则
+- `v-permission` 不会自动响应权限切换，页面中不要假设它是响应式权限系统
+- `v-event-unuse` / `v-event-use` 只控制鼠标交互，不处理键盘焦点逻辑
 
-## 8. AI 代码生成提示词（Prompt）
+## 9. 推荐 Prompt
 
 ```text
-请生成一个 Vue2 页面，集中演示 v-sline、v-length、v-permission、v-event-unuse、v-event-use：
-1) v-length 同时覆盖 number/regex/range(int) 三种模式；
+请生成一个 Vue2.7 页面，集中演示当前项目的 v-sline、v-length、v-permission、v-event-unuse、v-event-use，要求：
+1) v-length 覆盖普通限长、number、regex、range、range+int；
 2) 给出 sessionStorage.btnsPermission 的模拟注入代码；
-3) 演示无权限时 visibility:hidden 与 display:none 两种效果；
+3) v-permission 同时演示 id、class、display 三种写法；
 4) 演示父级禁用事件、子级恢复事件；
-5) 代码可直接运行，使用 Element UI 的 ElInput/ElButton。
-6) v-permission 同时演示 id 模式和 class 模式。
+5) 使用 Element UI 的 ElInput、ElButton、ElCard；
+6) 不使用 TS，不虚构不存在的指令参数。
 ```
 
-## 9. 标准代码模板（AI 可直接参考）
+## 10. 标准模板
 
 ```vue
 <template>
   <div style="padding: 20px;">
-    <!-- 1. v-sline：单行省略 -->
-    <div style="width: 200px;">
-      <span v-sline>这是一段非常长的文本，超出宽度会自动省略</span>
-    </div>
-
-    <!-- 2. v-length：各种输入限制 -->
-    <el-form label-width="120px">
-      <el-form-item label="普通限长(10位)">
-        <el-input v-model="form.normal" v-length="10" />
-      </el-form-item>
-      
-      <el-form-item label="数字限长(11位)">
-        <el-input v-model="form.phone" v-length.number="11" />
-      </el-form-item>
-
-      <el-form-item label="字母数字(6位)">
-        <el-input v-model="form.code" v-length.regex="{ maxLength: 6, pattern: /^[A-Z0-9]*$/ }" />
-      </el-form-item>
-
-      <el-form-item label="数值范围(0-100)">
-        <el-input v-model="form.score" v-length.range="{ min: 0, max: 100 }" />
-      </el-form-item>
-
-      <el-form-item label="整数范围(1-120)">
-        <el-input v-model="form.age" v-length.range="{ min: 1, max: 120, int: true }" />
-      </el-form-item>
-    </el-form>
-
-    <!-- 3. v-permission：权限控制 -->
-    <div style="margin-top: 20px;">
-      <!-- 默认模式：无权限时 visibility: hidden -->
-      <el-button id="add_btn" v-permission type="primary">新增(有权限)</el-button>
-      <el-button id="del_btn" v-permission type="danger">删除(无权限则不可见且占位)</el-button>
-      
-      <!-- display模式：无权限时 display: none -->
-      <el-button id="export_btn" v-permission.id.display type="warning">导出(无权限则不占位)</el-button>
-      
-      <!-- class模式：通过类名匹配 -->
-      <el-button class="admin-btn" v-permission.class>管理员专属</el-button>
-    </div>
-
-    <!-- 4. v-event-unuse/use：事件穿透 -->
-    <div v-event-unuse @click="onParentClick" style="border: 1px solid #ccc; padding: 20px;">
-      父级区域（禁用点击）
-      <div v-event-use @click="onChildClick" style="background: #eee; padding: 10px;">
-        子级区域（恢复点击）
+    <el-card shadow="never">
+      <div style="width: 220px; margin-bottom: 16px;">
+        <span v-sline>{{ longText }}</span>
       </div>
-    </div>
+
+      <el-form label-width="140px">
+        <el-form-item label="普通限长">
+          <el-input v-model="form.normal" v-length="10" />
+        </el-form-item>
+
+        <el-form-item label="数字限长">
+          <el-input v-model="form.mobile" v-length.number="11" />
+        </el-form-item>
+
+        <el-form-item label="正则校验">
+          <el-input v-model="form.code" v-length.regex="{ maxLength: 6, pattern: /^[A-Z0-9]*$/ }" />
+        </el-form-item>
+
+        <el-form-item label="数值范围">
+          <el-input v-model="form.score" v-length.range="{ min: 0, max: 100 }" />
+        </el-form-item>
+
+        <el-form-item label="整数范围">
+          <el-input v-model="form.age" v-length.range="{ min: 1, max: 120, int: true, maxLength: 3 }" />
+        </el-form-item>
+      </el-form>
+
+      <div style="margin-top: 16px;">
+        <el-button id="add_btn" v-permission type="primary">新增</el-button>
+        <el-button id="export_btn" v-permission.id.display>导出</el-button>
+        <el-button class="admin-btn" v-permission.class>管理员入口</el-button>
+      </div>
+
+      <div v-event-unuse style="margin-top: 16px; padding: 16px; border: 1px solid #ebeef5;">
+        <div v-event-use style="display: inline-block;" @click="handleChildClick">
+          点我恢复交互
+        </div>
+      </div>
+    </el-card>
   </div>
 </template>
 
 <script setup>
-import { reactive, onMounted } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
+
+const longText = ref('这是一段很长很长的文本，用于演示单行省略效果。')
 
 const form = reactive({
   normal: '',
-  phone: '',
+  mobile: '',
   code: '',
   score: '',
-  age: ''
+  age: '',
 })
 
-const onParentClick = () => console.log('父级点击（不会触发）')
-const onChildClick = (e) => {
-  e.stopPropagation() // 阻止冒泡
-  console.log('子级点击（会触发）')
+const handleChildClick = () => {
+  console.log('子区域点击生效')
 }
 
 onMounted(() => {
-  // 模拟注入权限
-  if (!sessionStorage.getItem('btnsPermission')) {
-    sessionStorage.setItem('btnsPermission', JSON.stringify(['add_btn', 'admin-btn']))
-  }
+  sessionStorage.setItem('btnsPermission', JSON.stringify(['add_btn', 'admin-btn']))
 })
 </script>
 ```

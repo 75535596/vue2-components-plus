@@ -1,28 +1,31 @@
 # NsDialog 使用说明（面向 AI 代码生成）
 
-本文档基于当前仓库实现，目标是让 AI 或开发者可直接据此生成可运行代码。
+本文档严格对应当前仓库实现，目标不是介绍“理想 API”，而是让 AI 和开发者基于现有能力直接生成可运行代码。
 
 ## 1. 组件定位
 
-- `NsDialog` 不是普通 SFC 标签组件，而是一个函数式弹窗创建器：
-  - 入口：`packages/components/NsDialog/index.js`
-  - 视图实现：`packages/components/NsDialog/NsDialog.vue`
-- 用法是调用 `NsDialog(config, modal?, appendTo?)` 动态创建实例。
-- 支持多开，实例挂在 `window.__dialogInstances`，可逐个关闭/统一关闭。
+- `NsDialog` 是函数式弹窗工厂，不是通过 `<NsDialog />` 标签直接使用的常规组件。
+- 入口文件：`packages/components/NsDialog/index.js`
+- 视图实现：`packages/components/NsDialog/NsDialog.vue`
+- 调用方式：`window.NsDialog(config, modal?, appendTo?)`
+- 支持多实例；所有实例会记录到 `window.__dialogInstances`
+- 返回值是实例对象，不是 Promise
 
-## 2. 基础调用
+## 2. 最小可运行示例
 
 ```js
 import FormDemo from '@/views/FormDemo.vue'
 
-window.NsDialog(
+const instance = window.NsDialog(
   {
     title: '示例弹窗',
     dom: FormDemo,
-    option: { readOnly: false },
+    option: {
+      readOnly: false
+    },
     events: {
       btnClick(payload) {
-        console.log('子组件事件', payload)
+        console.log('收到内容组件事件', payload)
       },
     },
   },
@@ -31,68 +34,109 @@ window.NsDialog(
 )
 ```
 
-## 3. `NsDialog(config, modal, appendTo)` 参数
+## 3. 调用签名
 
-### 3.1 函数参数
+### 3.1 `NsDialog(config, modal, appendTo)`
 
 | 参数 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
-| `config` | `Object` | - | 弹窗配置对象，见下表 |
-| `modal` | `Boolean` | `true` | 是否展示遮罩 |
-| `appendTo` | `String` | `'#app'` | 挂载容器选择器 |
+| `config` | `Object` | - | 弹窗配置对象，必须至少包含 `dom` |
+| `modal` | `Boolean` | `true` | 是否显示遮罩 |
+| `appendTo` | `String` | `'#app'` | 挂载容器选择器，找不到时回退到 `document.body` |
 
-### 3.2 `config` 支持字段（完整）
+### 3.2 返回值
 
-以下字段来自 `NsDialog.vue` `props` + `index.js` 增强能力。
+如果 `config` 缺失或 `config.dom` 不存在，返回 `false`。正常情况下返回实例对象。
+
+## 4. `config` 字段总表
+
+下表为当前实现实际支持的字段，来源于 `NsDialog.vue` 的 `props` 和 `index.js` 工厂增强逻辑。
 
 | 字段 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
-| `id` | `String` | 自动生成 | 实例唯一 id |
-| `class` | `String` | `''` | 传入后映射为 `className` |
+| `id` | `String` | 自动生成 | 实例 id |
+| `class` | `String` | `''` | 最终映射为内部 `className` |
 | `title` | `String` | `''` | 弹窗标题 |
-| `width` | `Number \| String` | `500` | 宽度，数字自动补 `px` |
-| `height` | `Number \| String` | `''` | 高度，设置后 body 自适应滚动 |
-| `modal` | `Boolean` | 函数参数 | 遮罩开关 |
-| `dialogPadding` | `Number \| String \| Array` | `-1` | 内容 padding，`-1` 用默认值 |
+| `width` | `Number \| String` | `500` | 弹窗宽度，数字会补 `px` |
+| `height` | `Number \| String` | `''` | 弹窗高度；设置后弹窗 body 使用纵向自适应布局 |
+| `dialogPadding` | `Number \| String \| Array` | `-1` | body 内边距；`-1` 表示默认 `16px 20px` |
 | `modalColor` | `String` | `rgba(0, 0, 0, 0.45)` | 遮罩颜色 |
 | `closeOnClickModal` | `Boolean` | `true` | 点击遮罩是否关闭 |
-| `dom` | `Object \| Function` | `null` | 主体内容组件（必填） |
+| `dom` | `Object \| Function` | `null` | 主体内容组件，必填 |
 | `option` | `Object` | `{}` | 透传给 `dom` 的 props |
-| `events` | `Object` | `{}` | 透传给 `dom` 的事件监听（`v-on`） |
-| `domCompleted` | `Function` | `null` | 内容组件 ref 就绪回调，参数是内容 ref |
+| `events` | `Object` | `{}` | 透传给 `dom` 的事件 |
+| `domCompleted` | `Function` | `null` | 内容组件 ref 可用后的回调，参数为内容 ref |
 | `headerDom` | `Object \| Function` | `null` | 自定义头部组件 |
 | `headerOption` | `Object` | `{}` | 透传给 `headerDom` 的 props |
 | `headerEvents` | `Object` | `{}` | 透传给 `headerDom` 的事件 |
-| `showFooter` | `Boolean` | `true` | 是否显示底部区域 |
+| `showFooter` | `Boolean` | `true` | 是否显示底部 |
 | `footerDom` | `Object \| Function` | `null` | 自定义底部组件 |
 | `footerOption` | `Object` | `{}` | 透传给 `footerDom` 的 props |
-| `footerTitle` | `Object` | `{ close:'取消', confirm:'确定' }` | 默认底部按钮文案 |
+| `footerTitle` | `Object` | `{ close: '取消', confirm: '确定' }` | 默认底部按钮文案 |
 | `footerEvents` | `Object` | `{}` | 透传给 `footerDom` 的事件 |
-| `footerButtonReverse` | `Boolean` | `false` | 默认按钮顺序反转（注意：通过 `NsDialog(...)` 工厂创建时，当前实现会强制置为 `true`） |
-| `immediately` | `Boolean` | `false` | 点击确认后是否立即关闭 |
-| `close` | `Function` | `null` | 弹窗 close 事件回调 |
-| `closed` | `Function` | `null` | 弹窗 closed 事件回调（销毁前） |
-| `draggable` | `Boolean` | `false` | 是否可拖拽 |
-| `confirm` | `Function` | `null` | 点击确认回调 |
-| `x` | `Number \| String` | `null` | 固定定位 left |
-| `y` | `Number \| String` | `null` | 固定定位 top |
-| `maxSize` | `Function` | `null` | 最大化配置函数 |
-| `store` | `Object` | `null` | 注入 Vuex（在 `index.js` 解析） |
-| `pinia` | `Object` | `null` | 注入 Pinia（在 `index.js` 解析） |
+| `footerButtonReverse` | `Boolean` | `false` | 组件默认值为 `false`，但通过工厂创建时当前实现会强制改成 `true` |
+| `immediately` | `Boolean` | `false` | 点击确认后是否先关闭再执行 `confirm` |
+| `close` | `Function` | `null` | `el-dialog` 的 `close` 阶段回调 |
+| `closed` | `Function` | `null` | `el-dialog` 的 `closed` 阶段回调；工厂会在这里销毁实例 |
+| `draggable` | `Boolean` | `false` | 是否允许拖拽标题栏 |
+| `confirm` | `Function` | `null` | 点击默认确认按钮时的回调 |
+| `x` | `Number \| String` | `null` | 固定定位 `left` |
+| `y` | `Number \| String` | `null` | 固定定位 `top` |
+| `maxSize` | `Function` | `null` | 存在时显示最大化按钮，函数返回最大化后的宽高坐标 |
+| `store` | `Object` | `null` | 注入给动态实例的 Vuex store |
+| `pinia` | `Object` | `null` | 注入给动态实例的 Pinia 实例 |
 
-## 4. 回调与事件
+## 5. 核心行为
 
-### 4.1 `confirm(closeFn, contentRef, loadingProxy)`
+### 5.1 内容组件如何接收数据
 
-- `closeFn`：调用后关闭弹窗。
-- `contentRef`：内容组件实例，可调用其公开方法。
-- `loadingProxy`：可写对象，用于控制确认按钮 loading。
+- `option` 会以 `v-bind="currentOption"` 的方式透传给内容组件
+- `events` 会以 `v-on="mergeEvents(events)"` 的方式透传给内容组件
+- `mergeEvents` 会额外注入一个 `close` 事件，因此内容组件内部可以直接 `this.$emit('close')`
+
+### 5.2 头部和底部如何自定义
+
+- `headerDom` / `footerDom` 接收组件对象或异步组件
+- `headerOption` / `footerOption` 作为 props 透传
+- `headerEvents` / `footerEvents` 作为事件透传
+- 这两类事件同样会额外合并 `close`
+
+### 5.3 默认确认按钮行为
+
+- 只有在 `showFooter=true` 且未传 `footerDom` 时，才会显示默认确认/取消按钮
+- 点击默认确认按钮后会执行 `dealConfirm`
+- 若未配置 `confirm`，按钮只会短暂进入 loading 后立即结束，不会自动关闭
+- 若 `confirm` 中调用了 `closeFn()`，组件会关闭，并自动弹出一次 `操作成功`
+
+### 5.4 `immediately=true` 的真实行为
+
+这一点是 AI 生成代码最容易写错的地方。
+
+- 点击确认后会先关闭弹窗
+- 然后调用 `confirm(null, contentRef)`
+- 当前实现不会传入第三个 `loadingProxy`
+- 因为弹窗已经先关闭，所以 `immediately=true` 更适合“无需等待结果、触发即关”的场景
+
+### 5.5 拖拽、定位、最大化
+
+- `draggable=true` 时，只有标题栏可拖拽
+- 只要传了 `x` 或 `y`，弹窗就改为 `position: fixed`
+- 最大化按钮是否显示，不取决于单独开关，而是取决于 `maxSize` 是否为函数
+- `maxSize()` 返回的对象支持 `width`、`height`、`x`、`y`
+
+### 5.6 回车行为
+
+- 当 `visible=true`、`showFooter=true`、`footerDom` 不存在时，按回车会触发默认确认逻辑
+- 如果用了自定义底部组件，回车不会自动触发 `footerEvents.confirm`
+
+## 6. `confirm` 回调签名
+
+### 6.1 常规模式
 
 ```js
-confirm(closeFn, contentRef, loading) {
-  Promise.resolve(contentRef.getFormData()).then((ok) => {
-    if (!ok) {
-      loading.value = false
+confirm(closeFn, contentRef, loadingProxy) {
+  return Promise.resolve(contentRef.getFormData()).then((data) => {
+    if (!data) {
       return
     }
     closeFn()
@@ -100,126 +144,180 @@ confirm(closeFn, contentRef, loading) {
 }
 ```
 
-### 4.2 透传事件对象
+### 6.2 参数含义
 
-- `events`、`headerEvents`、`footerEvents` 都会自动合并一个 `close` 事件：
-  - 在子组件内可直接触发 `this.$emit('close')` 来关弹窗。
-- `headerDom` / `footerDom` 作为组件渲染时，`headerEvents` / `footerEvents` 会按 `v-on` 透传。
-- 示例：`footerDom` 内触发 `this.$emit('confirm')`，外层在 `footerEvents.confirm` 里处理提交逻辑。
+| 参数 | 说明 |
+|---|---|
+| `closeFn` | 调用后关闭弹窗，仅在 `immediately=false` 时有意义 |
+| `contentRef` | 内容组件实例，可调用其公开方法 |
+| `loadingProxy` | 当前实现意图上用于控制确认按钮 loading，但只有常规模式下才会传入 |
 
-### 4.3 交互细节（易遗漏）
+### 6.3 更稳妥的生成策略
 
-- 当 `showFooter=true` 且未使用 `footerDom` 时，按回车键会触发默认确认逻辑（`dealConfirm`）。
-- 最大化按钮的显示条件不是 `showMaximizeButton` 配置项，而是 `maxSize` 为函数。
+- 如果需要异步校验后再关闭，用 `immediately=false`
+- 内容组件应暴露公开方法，例如 `getFormData`
+- 让 `confirm` 只负责校验、提交和决定是否调用 `closeFn`
+- 不要假设 `confirm` 返回 Promise 后会被组件自动等待；当前实现不会自动处理返回值
 
-## 5. 实例能力（返回值）
+## 7. 实例对象能力
 
-`NsDialog(...)` 返回 `instance` 对象，支持：
+`NsDialog(...)` 返回的实例对象结构如下。
 
-| 方法/字段 | 说明 |
+| 字段/方法 | 说明 |
 |---|---|
 | `id` | 实例 id |
+| `domRef` | 内容组件 ref，渲染完成后可用 |
 | `close()` | 主动关闭弹窗 |
-| `updateOption(partial)` | 动态更新 title/width/height/x/y/option |
+| `updateOption(partial)` | 动态更新配置 |
 | `callMethod(name, ...args)` | 调用内容组件实例方法 |
-| `domRef` | 内容组件 ref（就绪后） |
+
+### 7.1 `updateOption` 的真实更新范围
+
+`updateOption(partial)` 会对以下字段做特殊处理：
+
+- `title`
+- `width`
+- `height`
+- `x`
+- `y`
+
+除此之外，其余字段不会回写到顶层配置，而是会并入 `currentOption`，等价于继续给内容组件追加 props。
 
 ```js
-const ins = window.NsDialog({ title: 'A', dom: FormDemo })
-ins.updateOption({ title: 'B', width: '960px', readOnly: true })
-const data = await ins.callMethod('getFormData')
-ins.close()
+const instance = window.NsDialog({
+  title: '用户编辑',
+  dom: FormDemo,
+  option: { readOnly: false },
+})
+
+instance.updateOption({
+  title: '用户详情',
+  width: '960px',
+  readOnly: true,
+})
+
+const data = await instance.callMethod('getFormData')
+instance.close()
 ```
 
-## 6. 全局能力
+## 8. 全局能力
 
 | 方法 | 位置 | 说明 |
 |---|---|---|
-| `closeAllNsDialog()` | `NsDialog/index.js` | 关闭所有实例 |
-| `setExternalApp(app, options)` | `NsDialog/index.js` | 外部上下文注入（Vue/store/pinia） |
+| `closeAllNsDialog()` | `packages/components/NsDialog/index.js` | 关闭当前所有实例 |
+| `setExternalApp(app, options)` | `packages/components/NsDialog/index.js` | 解析外部 Vue / store / pinia 上下文 |
 
-## 7. Demo 功能映射（`src/views/DialogDemo.vue`）
+### 8.1 何时使用 `setExternalApp`
 
-当前 Demo 额外演示了以下组合能力，便于快速复制到业务代码：
+- 在非当前 Vue 根实例上下文里调用 `window.NsDialog`
+- 希望动态弹窗也能访问外部 store 或 pinia
+- 希望用指定的 Vue 构造器创建实例
 
-| 按钮/场景 | 对应能力 |
+## 9. Demo 功能映射
+
+`src/views/DialogDemo.vue` 当前已验证以下组合模式：
+
+| 场景 | 对应能力 |
 |---|---|
-| 打开弹窗 | `NsDialog(config, modal, appendTo)` 基础调用、多实例错位显示 |
-| 打开只读弹窗 | `option.readOnly` + `updateOption` 动态切换 |
-| 打开自定义头底部弹窗 | `headerDom/headerOption` + `footerDom/footerOption/footerEvents` |
-| 自定义头底部弹窗 | `modalColor` + `closeOnClickModal=false` + `immediately=true` |
-| 更新最后一个弹窗 | `instance.updateOption(partial)` |
-| 调用最后一个弹窗内容方法 | `instance.callMethod(name, ...args)` |
-| 关闭全部 | `this.$closeAllNsDialog()` / `window.closeAllNsDialog()` |
+| 打开普通弹窗 | `dom + option + events` |
+| 打开只读弹窗 | `option.readOnly` |
+| 多开错位显示 | `x / y` 动态偏移 |
+| 自定义头部 | `headerDom + headerOption` |
+| 自定义底部 | `footerDom + footerOption + footerEvents` |
+| 禁止点击遮罩关闭 | `closeOnClickModal=false` |
+| 蓝色遮罩 | `modalColor` |
+| 最大化 | `maxSize` |
+| 动态切换标题和内容 props | `instance.updateOption()` |
+| 调用内容方法 | `instance.callMethod()` |
+| 全量关闭 | `this.$closeAllNsDialog()` 或 `window.closeAllNsDialog()` |
 
-## 8. AI 生成代码建议
+## 10. AI 生成代码约束
 
-- 创建弹窗时必须提供 `dom`，否则函数返回 `false`。
-- 内容组件应暴露可调用方法（如 `getFormData`）以配合 `callMethod`/`confirm`。
-- 若需要完全自定义底部，设置 `footerDom` 并自己处理确认关闭逻辑。
-- 需要多开管理时，维护返回实例数组，不要只存最后一个。
+- 必须通过 `window.NsDialog(...)` 调用，不要写成 `<NsDialog />`
+- `dom` 必填
+- 需要被外层调用的方法必须在内容组件上暴露为实例方法
+- `updateOption()` 适合改标题、宽高、坐标和内容 props，不适合更新所有顶层行为配置
+- 自定义底部时，关闭动作要么触发 `$emit('close')`，要么由外层自己维护逻辑
+- 若要保留多个弹窗，业务侧应保存返回实例数组
 
-## 9. AI 代码生成提示词（Prompt）
+## 11. 推荐 Prompt
 
 ```text
-请生成 Vue2.7 + script setup 的 NsDialog Demo：
-1) 通过 window.NsDialog(config, modal, '#app') 打开弹窗；
+请基于当前项目的 NsDialog 工厂生成 Vue2.7 页面，要求：
+1) 只能通过 window.NsDialog(config, modal, '#app') 打开弹窗；
 2) 演示普通弹窗、只读弹窗、自定义 headerDom/footerDom 弹窗；
-3) 使用 headerOption/headerEvents/footerOption/footerEvents；
-4) 使用 confirm(closeFn, contentRef, loading) + immediately；
-5) 使用 instance.updateOption 与 instance.callMethod；
-6) 提供 closeAllNsDialog 一键关闭。
+3) 内容组件通过 option 接收 props，通过 events 向外派发事件；
+4) 演示 instance.updateOption 和 instance.callMethod；
+5) 演示 draggable、x/y 定位、maxSize 最大化；
+6) 演示 closeAllNsDialog；
+7) 代码风格与当前仓库一致，不使用 TS，不虚构不存在的 props。
 ```
 
-## 10. 标准代码模板（AI 可直接参考）
+## 12. 标准模板
 
 ```vue
 <template>
   <div>
-    <el-button @click="openDialog">打开弹窗</el-button>
+    <el-button type="primary" @click="openDialog">打开弹窗</el-button>
+    <el-button :disabled="!dialogInstance" @click="toggleReadonly">切换只读</el-button>
+    <el-button :disabled="!dialogInstance" @click="callInnerMethod">调用内容方法</el-button>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import MyFormContent from './MyFormContent.vue' // 假设这是弹窗内容组件
+import FormDemo from '@/views/FormDemo.vue'
 
 const dialogInstance = ref(null)
+const readonly = ref(false)
 
 const openDialog = () => {
-  dialogInstance.value = window.NsDialog({
-    title: '新建用户',
-    width: '600px',
-    height: '400px',
-    dom: MyFormContent,
-    option: {
-      // 透传给 MyFormContent 的 props
-      readOnly: false,
-      userId: 123
-    },
-    events: {
-      // 透传给 MyFormContent 的事件
-      customEvent: (payload) => {
-        console.log('收到子组件事件', payload)
-      }
-    },
-    confirm: (closeFn, contentRef, loadingProxy) => {
-      // 点击底部确认按钮的回调
-      loadingProxy.value = true
-      contentRef.getFormData().then((data) => {
-        if (data) {
-          console.log('提交数据:', data)
-          closeFn() // 关闭弹窗
+  dialogInstance.value = window.NsDialog(
+    {
+      title: '用户编辑',
+      width: '960px',
+      height: '620px',
+      dom: FormDemo,
+      draggable: true,
+      x: 'calc(50% - 480px)',
+      y: 'calc(50% - 310px)',
+      option: {
+        readOnly: readonly.value
+      },
+      events: {
+        btnClick(payload) {
+          console.log('内容组件事件', payload)
+        },
+      },
+      confirm: async (closeFn, contentRef) => {
+        const result = await contentRef.getFormData()
+        if (!result) {
+          return
         }
-      }).finally(() => {
-        loadingProxy.value = false
-      })
+        closeFn()
+      },
+      closed: () => {
+        dialogInstance.value = null
+      },
     },
-    closed: () => {
-      console.log('弹窗已关闭')
-      dialogInstance.value = null
-    }
-  }, true, '#app')
+    true,
+    '#app',
+  )
+}
+
+const toggleReadonly = () => {
+  if (!dialogInstance.value) return
+  readonly.value = !readonly.value
+  dialogInstance.value.updateOption({
+    title: readonly.value ? '用户详情' : '用户编辑',
+    readOnly: readonly.value,
+  })
+}
+
+const callInnerMethod = async () => {
+  if (!dialogInstance.value) return
+  const data = await dialogInstance.value.callMethod('getFormData')
+  console.log(data)
 }
 </script>
 ```
