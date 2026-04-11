@@ -39,7 +39,7 @@
 
         <el-col :span="defaultSpan" class="page-search__actions" :class="actionAlignClass">
           <el-form-item label-width="0">
-            <el-button type="primary" @click="handleSearch">查询</el-button>
+            <el-button v-enterClick type="primary" @click="handleSearch">查询</el-button>
             <el-button @click="handleReset">重置</el-button>
             <slot-renderer
               v-if="slotRenderers['actions-after-reset']"

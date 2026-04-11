@@ -35,6 +35,7 @@ vue2-components-plus  是一个功能丰富的 Vue 3 企业级组件库，提供
 - ✅ **v-length**: 输入长度和格式限制
 - ✅ **v-sline**: 单行文本省略
 - ✅ **v-event-unuse/use**: 事件穿透控制
+- ✅ **v-enterClick**: 按回车触发按钮点击
 
 ## 使用公共组件库
 
@@ -361,6 +362,25 @@ app.use(NsComponents)
   </div>
 </template>
 ```
+
+### 5. v-enterClick - 回车触发点击
+
+```vue
+<template>
+  <el-button v-enterClick type="primary" @click="handleSearch">查询</el-button>
+</template>
+```
+
+#### 行为说明
+
+- 在当前页面按下 Enter 时，自动触发绑定元素的 `click`
+- 当焦点位于 `el-select` 输入框且下拉面板处于展开状态时，不会触发点击，避免与选项确认冲突
+- 指令在绑定时注册 `document.keydown` 监听，在组件卸载时自动移除监听，避免内存泄露
+
+#### 使用建议
+
+- 推荐绑定到“查询”按钮，配合搜索区实现回车即查询
+- 如果页面有多个按钮同时绑定该指令，按一次回车会触发多个点击，应只在一个主操作按钮上使用
 
 ## 🔧 工具函数
 

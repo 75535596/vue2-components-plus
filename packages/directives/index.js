@@ -176,6 +176,38 @@ function unbindLengthDirective(el) {
   delete el.__nsLengthHandlers
 }
 
+const enterClickDirective = {
+  inserted(el) {
+    const handler = (event) => {
+      if (event.key !== 'Enter') return
+      const activeEl = document.activeElement
+      const isSelectTrigger = activeEl && activeEl.tagName === 'INPUT' && activeEl.closest('.el-select')
+
+      if (isSelectTrigger) {
+        const isDropdownOpen = activeEl.getAttribute('aria-expanded') === 'true'
+        if (isDropdownOpen) {
+          return
+        }
+      }
+
+      el.click()
+
+      if (isSelectTrigger) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }
+    el.__nsEnterClickHandler = handler
+    document.addEventListener('keydown', handler, true)
+  },
+  unbind(el) {
+    if (el.__nsEnterClickHandler) {
+      document.removeEventListener('keydown', el.__nsEnterClickHandler, true)
+      delete el.__nsEnterClickHandler
+    }
+  },
+}
+
 export function registerDirective(Vue) {
   Vue.directive('sline', {
     inserted(el) {
@@ -241,4 +273,7 @@ export function registerDirective(Vue) {
       el.style.pointerEvents = 'auto'
     },
   })
+
+  Vue.directive('enterClick', enterClickDirective)
+  Vue.directive('enter-click', enterClickDirective)
 }
