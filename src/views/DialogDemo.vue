@@ -13,6 +13,7 @@
       <div class="dialog-demo__actions">
         <el-button type="primary" @click="openDialog()">打开弹窗</el-button>
         <el-button @click="openReadonlyDialog">打开只读弹窗</el-button>
+        <el-button @click="openCustomShellDialog">打开自定义头底部弹窗</el-button>
         <el-button @click="updateDialogOption">更新最后一个弹窗</el-button>
         <el-button @click="callDialogMethod">调用最后一个弹窗内容方法</el-button>
         <el-button type="danger" plain :disabled="!dialogInstances.length" @click="closeAllDialogs">关闭全部</el-button>
@@ -41,8 +42,9 @@
       <el-col :span="14">
         <el-card shadow="never" class="dialog-demo__card">
           <div slot="header">能力说明</div>
-          <el-steps direction="vertical" :active="4" finish-status="success">
+          <el-steps direction="vertical" :active="5" finish-status="success">
             <el-step title="打开弹窗" description="每次打开会创建独立实例，并做错位展示。" />
+            <el-step title="头尾插槽" description="支持通过 headerDom / footerDom 渲染自定义头部和底部。" />
             <el-step title="更新配置" description="可更新标题、宽高、位置以及传入内容组件的 props。" />
             <el-step title="调用方法" description="通过实例调用弹窗内部组件的公开方法，例如获取表单数据。" />
             <el-step title="关闭管理" description="支持关闭指定实例与一键关闭全部实例。" />
@@ -62,6 +64,69 @@ const openIndex = ref(0)
 const lastReadOnly = ref(false)
 const { proxy } = getCurrentInstance()
 
+const DialogHeaderBadge = {
+  name: 'DialogHeaderBadge',
+  props: {
+    title: {
+      type: String,
+      default: '自定义头部',
+    },
+    tagText: {
+      type: String,
+      default: '高级',
+    },
+  },
+  render(h) {
+    return h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [
+      h('span', { style: { fontWeight: 600 } }, this.title),
+      h(
+        'el-tag',
+        {
+          props: { size: 'mini', type: 'warning' },
+        },
+        [this.tagText],
+      ),
+    ])
+  },
+}
+
+const DialogFooterActions = {
+  name: 'DialogFooterActions',
+  props: {
+    confirmText: {
+      type: String,
+      default: '自定义确认',
+    },
+  },
+  methods: {
+    emitConfirm() {
+      this.$emit('confirm')
+    },
+    emitClose() {
+      this.$emit('close')
+    },
+  },
+  render(h) {
+    return h('div', { style: { display: 'flex', justifyContent: 'flex-end', gap: '8px' } }, [
+      h(
+        'el-button',
+        {
+          on: { click: this.emitClose },
+        },
+        ['关闭'],
+      ),
+      h(
+        'el-button',
+        {
+          props: { type: 'primary' },
+          on: { click: this.emitConfirm },
+        },
+        [this.confirmText],
+      ),
+    ])
+  },
+}
+
 const refreshInstances = () => {
   setTimeout(() => {
     dialogInstances.value = Array.isArray(window.__dialogInstances)
@@ -77,20 +142,27 @@ const openDialog = (options = {}) => {
   }
   const offset = openIndex.value * 24
   const readOnly = !!options.readOnly
-  window.NsDialog(
+  const resolvedOption = Object.assign(
+    {
+      readOnly,
+      insideDialog: true,
+      hintText: readOnly ? '当前是只读弹窗内容。' : '可以在弹窗中直接编辑表单并触发事件。',
+    },
+    options.option || {},
+  )
+  const baseEvents = Object.assign(
+    {
+      btnClick: handleInnerButtonClick,
+    },
+    options.events || {},
+  )
+  const dialogConfig = Object.assign(
     {
       title: options.title || 'NsDialog 示例（setup）',
       class: 'dialog-demo-instance',
       dom: FormDemo,
-      showMaximizeButton: true,
-      option: {
-        readOnly,
-        insideDialog: true,
-        hintText: readOnly ? '当前是只读弹窗内容。' : '可以在弹窗中直接编辑表单并触发事件。',
-      },
-      events: {
-        btnClick: handleInnerButtonClick,
-      },
+      option: resolvedOption,
+      events: baseEvents,
       width: options.width || '960px',
       height: options.height || '620px',
       dialogPadding: [10, 10],
@@ -122,6 +194,10 @@ const openDialog = (options = {}) => {
       close: refreshInstances,
       closed: refreshInstances,
     },
+    options.extraConfig || {},
+  )
+  window.NsDialog(
+    dialogConfig,
     true,
     '#app',
   )
@@ -134,6 +210,35 @@ const openReadonlyDialog = () => {
   openDialog({
     readOnly: true,
     title: '只读预览弹窗（setup）',
+  })
+}
+
+const openCustomShellDialog = () => {
+  openDialog({
+    title: '自定义头底部弹窗',
+    modal: true,
+    option: {
+      hintText: '当前演示 headerDom / footerDom / footerEvents / modalColor / closeOnClickModal',
+    },
+    extraConfig: {
+      modalColor: 'rgba(64, 158, 255, 0.2)',
+      closeOnClickModal: false,
+      immediately: true,
+      headerDom: DialogHeaderBadge,
+      headerOption: {
+        title: '高级弹窗头部',
+        tagText: 'Custom',
+      },
+      footerDom: DialogFooterActions,
+      footerOption: {
+        confirmText: '提交',
+      },
+      footerEvents: {
+        confirm: () => {
+          proxy.$message.success('触发了自定义底部 confirm 事件')
+        },
+      },
+    },
   })
 }
 

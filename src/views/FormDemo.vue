@@ -24,6 +24,9 @@
         <el-button type="primary" @click="getFormData">获取表单数据</el-button>
         <el-button @click="loadDetailData()">模拟详情回填</el-button>
         <el-button @click="resetFormData()">重置表单</el-button>
+        <el-button @click="inspectFormNode">查看节点配置</el-button>
+        <el-button @click="inspectFormNodeRef">查看节点实例</el-button>
+        <el-button @click="rebuildDefaultValues">重建默认值快照</el-button>
         <el-button @click="toggleReadOnly">切换只读</el-button>
         <el-button @click="notifyInnerButton">触发自定义事件</el-button>
         <el-button v-if="insideDialog" type="danger" plain @click="emit('close')">从内容区关闭弹窗</el-button>
@@ -216,6 +219,38 @@ function createRows() {
           'v-length.range': { min: 0, max: 1 },
           rules: [{ required: true, message: '请输入 IOU', trigger: 'blur' }],
         },
+      },
+    ],
+    [
+      {
+        label: '推理策略',
+        span: 24,
+        children: [
+          {
+            key: 'inferMode',
+            label: '推理模式',
+            value: 'fast',
+            component: 'ElSelect',
+            params: {
+              clearable: true,
+              options: [
+                { label: '快速', value: 'fast' },
+                { label: '平衡', value: 'balanced' },
+                { label: '高精度', value: 'accurate' },
+              ],
+            },
+          },
+          {
+            key: 'batchSize',
+            label: '批量大小',
+            value: '1',
+            component: 'ElInput',
+            params: {
+              clearable: true,
+              'v-length.range': { min: 1, max: 16, int: true },
+            },
+          },
+        ],
       },
     ],
   ]
@@ -466,6 +501,8 @@ function createDetailData() {
     modelName: 'helmet-detector-v2',
     confidence: '0.72',
     iou: '0.33',
+    inferMode: 'accurate',
+    batchSize: '4',
     timeInterval: '3',
     stuck_threshold: ['component', 'table'],
     maxRetries: '5',
@@ -686,6 +723,40 @@ const notifyInnerButton = () => {
   proxy.$message.success('已触发自定义事件')
 }
 
+const inspectFormNode = () => {
+  if (!row1Ref.value || typeof row1Ref.value.getFormNodeByKey !== 'function') {
+    proxy.$message.warning('表单实例尚未就绪')
+    return
+  }
+  const node = row1Ref.value.getFormNodeByKey('modelName')
+  proxy.$message.info(node ? '已找到字段节点：' + node.label : '未找到字段节点 modelName')
+}
+
+const inspectFormNodeRef = () => {
+  if (!row1Ref.value || typeof row1Ref.value.getFormNodeRefByKey !== 'function') {
+    proxy.$message.warning('表单实例尚未就绪')
+    return
+  }
+  const nodeRef = row1Ref.value.getFormNodeRefByKey('modelName')
+  if (!nodeRef) {
+    proxy.$message.warning('未找到字段实例 modelName')
+    return
+  }
+  if (typeof nodeRef.focus === 'function') {
+    nodeRef.focus()
+  }
+  proxy.$message.success('已获取 modelName 对应组件实例')
+}
+
+const rebuildDefaultValues = () => {
+  getFormRefs().forEach((refInstance) => {
+    if (refInstance && typeof refInstance.initDefaultValues === 'function') {
+      refInstance.initDefaultValues()
+    }
+  })
+  proxy.$message.success('已重建默认值快照')
+}
+
 const normalizeUploadList = (fileList) =>
   (fileList || []).map((item) => {
     const responseData = item && item.response && item.response.data ? item.response.data : item
@@ -770,6 +841,9 @@ defineExpose({
   resetFormData,
   loadDetailData,
   showToast,
+  inspectFormNode,
+  inspectFormNodeRef,
+  rebuildDefaultValues,
 })
 </script>
 
