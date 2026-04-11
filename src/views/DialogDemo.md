@@ -104,6 +104,8 @@ confirm(closeFn, contentRef, loading) {
 
 - `events`、`headerEvents`、`footerEvents` 都会自动合并一个 `close` 事件：
   - 在子组件内可直接触发 `this.$emit('close')` 来关弹窗。
+- `headerDom` / `footerDom` 作为组件渲染时，`headerEvents` / `footerEvents` 会按 `v-on` 透传。
+- 示例：`footerDom` 内触发 `this.$emit('confirm')`，外层在 `footerEvents.confirm` 里处理提交逻辑。
 
 ### 4.3 交互细节（易遗漏）
 
@@ -156,3 +158,68 @@ ins.close()
 - 内容组件应暴露可调用方法（如 `getFormData`）以配合 `callMethod`/`confirm`。
 - 若需要完全自定义底部，设置 `footerDom` 并自己处理确认关闭逻辑。
 - 需要多开管理时，维护返回实例数组，不要只存最后一个。
+
+## 9. AI 代码生成提示词（Prompt）
+
+```text
+请生成 Vue2.7 + script setup 的 NsDialog Demo：
+1) 通过 window.NsDialog(config, modal, '#app') 打开弹窗；
+2) 演示普通弹窗、只读弹窗、自定义 headerDom/footerDom 弹窗；
+3) 使用 headerOption/headerEvents/footerOption/footerEvents；
+4) 使用 confirm(closeFn, contentRef, loading) + immediately；
+5) 使用 instance.updateOption 与 instance.callMethod；
+6) 提供 closeAllNsDialog 一键关闭。
+```
+
+## 10. 标准代码模板（AI 可直接参考）
+
+```vue
+<template>
+  <div>
+    <el-button @click="openDialog">打开弹窗</el-button>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import MyFormContent from './MyFormContent.vue' // 假设这是弹窗内容组件
+
+const dialogInstance = ref(null)
+
+const openDialog = () => {
+  dialogInstance.value = window.NsDialog({
+    title: '新建用户',
+    width: '600px',
+    height: '400px',
+    dom: MyFormContent,
+    option: {
+      // 透传给 MyFormContent 的 props
+      readOnly: false,
+      userId: 123
+    },
+    events: {
+      // 透传给 MyFormContent 的事件
+      customEvent: (payload) => {
+        console.log('收到子组件事件', payload)
+      }
+    },
+    confirm: (closeFn, contentRef, loadingProxy) => {
+      // 点击底部确认按钮的回调
+      loadingProxy.value = true
+      contentRef.getFormData().then((data) => {
+        if (data) {
+          console.log('提交数据:', data)
+          closeFn() // 关闭弹窗
+        }
+      }).finally(() => {
+        loadingProxy.value = false
+      })
+    },
+    closed: () => {
+      console.log('弹窗已关闭')
+      dialogInstance.value = null
+    }
+  }, true, '#app')
+}
+</script>
+```

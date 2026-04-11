@@ -2,7 +2,15 @@
 
 本文档对应 `packages/directives/index.js` 的当前实现，适合 AI 直接生成指令使用代码。
 
-## 1. 注册方式
+## 1. 组件与入口
+
+| 组件/入口 | 路径 |
+|---|---|
+| 主入口 | `packages/directives/index.js` |
+| 指令实现 | `packages/directives/directives/` |
+| 注册插件 | `packages/directives/index.js` 导出 `Vue2ComponentsPlus` 插件 |
+
+注册方式见下方第 2 节。
 
 推荐方式是安装组件库插件，指令会自动注册：
 
@@ -20,7 +28,7 @@ import { registerDirective } from '../../packages/directives'
 registerDirective(Vue)
 ```
 
-## 2. `v-sline`：单行省略
+## 2. v-sline：单行省略
 
 ### 2.1 作用
 
@@ -41,7 +49,7 @@ registerDirective(Vue)
 
 - 无参数，无修饰符。
 
-## 3. `v-length`：输入限制（核心）
+## 3. v-length：输入限制（核心）
 
 `v-length` 通过监听 input/composition 事件限制输入内容，兼容中文输入法（组合输入阶段不截断）。
 
@@ -85,8 +93,10 @@ registerDirective(Vue)
 - 绑定元素可为原生 `input/textarea`，也可为组件根节点（内部自动查找 input）。
 - 值被修正后会主动触发一次 `input` 事件，确保 `v-model` 同步。
 - `.range` 超出范围时会直接裁剪到边界值。
+- `.number` 允许负号和小数点；如需仅整数请用 `.range` 且 `int: true`。
+- `.regex` 是按"逐字符"检查，`pattern` 需允许中间态（例如 `^[A-Z0-9]*$`）。
 
-## 4. `v-permission`：权限控制
+## 4. v-permission：权限控制
 
 权限来源：`sessionStorage.btnsPermission`，若无则读 `localStorage.btnsPermission`。
 
@@ -112,7 +122,7 @@ registerDirective(Vue)
 <el-button class="admin-btn" v-permission.class>管理员入口</el-button>
 ```
 
-## 5. `v-event-unuse` / `v-event-use`：事件穿透控制
+## 5. v-event-unuse / v-event-use：事件穿透控制
 
 ### 5.1 行为
 
@@ -130,9 +140,118 @@ registerDirective(Vue)
 </div>
 ```
 
-## 6. AI 生成代码建议
+## 6. v-permission 权限数据来源
+
+权限数据存储在 `sessionStorage.btnsPermission`（优先）或 `localStorage.btnsPermission`。
+
+数据结构为 JSON 数组，元素为权限标识字符串。
+
+```js
+// 权限注入示例
+sessionStorage.setItem('btnsPermission', JSON.stringify(['add_btn', 'edit_btn', 'delete_btn', 'admin-btn']))
+
+// 检查权限的匹配逻辑
+// v-permission / v-permission.id → 匹配元素 id
+// v-permission.class → 匹配元素 classList
+```
+
+## 7. AI 生成代码建议
 
 - 生成表单时，数值输入优先使用 `v-length.range`，避免后端收到非法文本。
 - 权限控制推荐统一规范：按钮必须有稳定 `id` 或权限 class。
 - `v-permission` 是插入时计算，不会自动响应权限数组变化；权限切换后需刷新或重渲染。
 - 对中文输入场景，不要用简单 `substring` 替代 `v-length`，否则会破坏输入体验。
+
+## 8. AI 代码生成提示词（Prompt）
+
+```text
+请生成一个 Vue2 页面，集中演示 v-sline、v-length、v-permission、v-event-unuse、v-event-use：
+1) v-length 同时覆盖 number/regex/range(int) 三种模式；
+2) 给出 sessionStorage.btnsPermission 的模拟注入代码；
+3) 演示无权限时 visibility:hidden 与 display:none 两种效果；
+4) 演示父级禁用事件、子级恢复事件；
+5) 代码可直接运行，使用 Element UI 的 ElInput/ElButton。
+6) v-permission 同时演示 id 模式和 class 模式。
+```
+
+## 9. 标准代码模板（AI 可直接参考）
+
+```vue
+<template>
+  <div style="padding: 20px;">
+    <!-- 1. v-sline：单行省略 -->
+    <div style="width: 200px;">
+      <span v-sline>这是一段非常长的文本，超出宽度会自动省略</span>
+    </div>
+
+    <!-- 2. v-length：各种输入限制 -->
+    <el-form label-width="120px">
+      <el-form-item label="普通限长(10位)">
+        <el-input v-model="form.normal" v-length="10" />
+      </el-form-item>
+      
+      <el-form-item label="数字限长(11位)">
+        <el-input v-model="form.phone" v-length.number="11" />
+      </el-form-item>
+
+      <el-form-item label="字母数字(6位)">
+        <el-input v-model="form.code" v-length.regex="{ maxLength: 6, pattern: /^[A-Z0-9]*$/ }" />
+      </el-form-item>
+
+      <el-form-item label="数值范围(0-100)">
+        <el-input v-model="form.score" v-length.range="{ min: 0, max: 100 }" />
+      </el-form-item>
+
+      <el-form-item label="整数范围(1-120)">
+        <el-input v-model="form.age" v-length.range="{ min: 1, max: 120, int: true }" />
+      </el-form-item>
+    </el-form>
+
+    <!-- 3. v-permission：权限控制 -->
+    <div style="margin-top: 20px;">
+      <!-- 默认模式：无权限时 visibility: hidden -->
+      <el-button id="add_btn" v-permission type="primary">新增(有权限)</el-button>
+      <el-button id="del_btn" v-permission type="danger">删除(无权限则不可见且占位)</el-button>
+      
+      <!-- display模式：无权限时 display: none -->
+      <el-button id="export_btn" v-permission.id.display type="warning">导出(无权限则不占位)</el-button>
+      
+      <!-- class模式：通过类名匹配 -->
+      <el-button class="admin-btn" v-permission.class>管理员专属</el-button>
+    </div>
+
+    <!-- 4. v-event-unuse/use：事件穿透 -->
+    <div v-event-unuse @click="onParentClick" style="border: 1px solid #ccc; padding: 20px;">
+      父级区域（禁用点击）
+      <div v-event-use @click="onChildClick" style="background: #eee; padding: 10px;">
+        子级区域（恢复点击）
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { reactive, onMounted } from 'vue'
+
+const form = reactive({
+  normal: '',
+  phone: '',
+  code: '',
+  score: '',
+  age: ''
+})
+
+const onParentClick = () => console.log('父级点击（不会触发）')
+const onChildClick = (e) => {
+  e.stopPropagation() // 阻止冒泡
+  console.log('子级点击（会触发）')
+}
+
+onMounted(() => {
+  // 模拟注入权限
+  if (!sessionStorage.getItem('btnsPermission')) {
+    sessionStorage.setItem('btnsPermission', JSON.stringify(['add_btn', 'admin-btn']))
+  }
+})
+</script>
+```

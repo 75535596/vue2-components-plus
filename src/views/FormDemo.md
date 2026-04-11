@@ -87,7 +87,17 @@ const state = reactive({
 | `delValue` | `Array` | 否 | 删除文件等扩展数据，收集时合并 |
 | `ref` | `Any` | 自动写入 | 渲染后自动回写字段组件实例 |
 
-### 4.2 `params` 特殊约定
+### 4.2 `span` 布局规则（生成代码常见遗漏）
+
+| `span` 值 | 实际行为 |
+|---|---|
+| `0` | 当前字段隐藏 |
+| `1-24` 数字 | 按 24 栅格换算宽度 |
+| `>24` 数字 | 视为像素宽度（如 `320` 等于 `320px`） |
+| `'50%'` 这类百分比字符串 | 直接按百分比宽度渲染 |
+| 不传 | 当前行自动均分宽度 |
+
+### 4.3 `params` 特殊约定
 
 | 键 | 说明 |
 |---|---|
@@ -123,6 +133,13 @@ field.slots = {
 | `getFormNodeByKey(key)` | `String` | `Field \| null` | 找字段配置节点 |
 | `getFormNodeRefByKey(key)` | `String` | `Any` | 找字段组件实例 |
 | `initDefaultValues()` | - | `void` | 重新初始化默认值 |
+
+### 7.1 数据读写细节（生成代码关键）
+
+- `getFormKvData()` 会把上传类字段的 `value + delValue` 合并后返回。
+- `resetForm(true)` 会在值变化时触发字段 `events.change` 与 `events.input`。
+- `resetForm()` 会清空 `delValue`，并清空上传控件 `params.fileList`。
+- `setFormData(data)` 对 `ElCascader` 的字符串逗号值会自动拆分数组，对上传控件会同步写入 `params.fileList`。
 
 ## 8. `NsFormTitle` 属性与插槽
 
@@ -171,3 +188,151 @@ field.slots = {
 | 触发自定义事件 | 通过 `emit('btnClick', payload)` 给外层容器 |
 
 并且 `rows` 已示例 `children` 分组字段结构，可直接按该模式扩展复杂分组表单。
+
+## 12. AI 代码生成提示词（Prompt）
+
+将下面模板作为提示词输入给 AI，可稳定生成可运行代码：
+
+```text
+请生成 Vue2.7 + script setup 的 NsForm 页面：
+1) 外层使用 el-form 承载校验；
+2) rows 中至少包含：普通字段、children 分组字段、上传字段、联动字段；
+3) 每个字段使用 key/label/value/component/params/events 结构；
+4) 暴露 getFormKvData、setFormData、resetForm、getFormNodeByKey、getFormNodeRefByKey；
+5) 演示 readOnly 切换和 resetForm(true) 触发 change/input；
+6) 代码风格与当前项目一致，不使用 TS。
+```
+
+## 13. 标准代码模板（AI 可直接参考）
+
+```vue
+<template>
+  <el-form ref="shellForm" :model="state" label-position="top">
+    <NsFormTitle title="基础信息">
+      <NsForm
+        ref="formRef"
+        :rows="state.rows"
+        formPropKey="rows"
+        model="vertical"
+        :readOnly="readOnly"
+        labelWidth="120"
+        gapH="16px"
+        gapV="12px"
+      />
+    </NsFormTitle>
+
+    <div style="margin-top: 20px;">
+      <el-button type="primary" @click="submit">提交</el-button>
+      <el-button @click="reset">重置</el-button>
+      <el-button @click="fillData">回填数据</el-button>
+    </div>
+  </el-form>
+</template>
+
+<script setup>
+import { reactive, ref, nextTick } from 'vue'
+
+const shellForm = ref(null)
+const formRef = ref(null)
+const readOnly = ref(false)
+
+const state = reactive({
+  rows: [
+    [
+      {
+        key: 'name',
+        label: '姓名',
+        value: '',
+        component: 'ElInput',
+        params: {
+          clearable: true,
+          rules: [{ required: true, message: '请输入姓名', trigger: 'blur' }]
+        }
+      },
+      {
+        key: 'age',
+        label: '年龄',
+        value: '',
+        component: 'ElInput',
+        params: {
+          clearable: true,
+          'v-length.range': { min: 1, max: 120, int: true }
+        }
+      }
+    ],
+    [
+      {
+        key: 'type',
+        label: '用户类型',
+        value: 'normal',
+        component: 'ElSelect',
+        events: {
+          change: (val) => {
+            console.log('类型变更为', val)
+            // 联动示例：可在此修改其它项的值或属性
+          }
+        },
+        params: {
+          clearable: true,
+          options: [
+            { label: '普通用户', value: 'normal' },
+            { label: 'VIP用户', value: 'vip' }
+          ]
+        }
+      },
+      {
+        key: 'avatar',
+        label: '头像',
+        value: [],
+        component: 'ElUpload',
+        params: {
+          action: '#',
+          limit: 1,
+          fileList: [],
+          autoUpload: false
+        }
+      }
+    ]
+  ]
+})
+
+// 提交表单
+const submit = async () => {
+  try {
+    await shellForm.value.validate()
+    const data = formRef.value.getFormKvData()
+    console.log('表单数据:', data)
+  } catch (error) {
+    console.error('校验失败', error)
+  }
+}
+
+// 重置表单
+const reset = () => {
+  formRef.value.resetForm()
+  nextTick(() => {
+    shellForm.value.clearValidate()
+  })
+}
+
+// 回填数据
+const fillData = () => {
+  const detail = {
+    name: '张三',
+    age: '28',
+    type: 'vip',
+    avatar: [
+      { name: 'logo.png', url: 'https://example.com/logo.png', fileName: 'logo.png', filePath: 'https://example.com/logo.png' }
+    ]
+  }
+  
+  // 对于上传组件，需手动同步 fileList 参数
+  const avatarNode = formRef.value.getFormNodeByKey('avatar')
+  if (avatarNode) {
+    avatarNode.params.fileList = [...detail.avatar]
+  }
+  
+  formRef.value.setFormData(detail)
+}
+</script>
+```
