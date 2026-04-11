@@ -41,6 +41,11 @@
           <el-form-item label-width="0">
             <el-button type="primary" @click="handleSearch">查询</el-button>
             <el-button @click="handleReset">重置</el-button>
+            <slot-renderer
+              v-if="slotRenderers['actions-after-reset']"
+              :renderer="slotRenderers['actions-after-reset']"
+              :scope="{ formData, handleSearch, handleReset, isCollapsed }"
+            />
             <el-button
               v-if="showCollapse && items.length > collapseLimit"
               type="text"
@@ -104,11 +109,21 @@ export default {
     }
   },
   computed: {
+    itemsPerRow() {
+      const span = Number(this.defaultSpan || 6)
+      const normalizedSpan = Number.isFinite(span) && span > 0 ? span : 6
+      return Math.max(1, Math.floor(24 / normalizedSpan))
+    },
     visibleItems() {
       if (!this.showCollapse || !this.isCollapsed) {
         return this.items
       }
-      return this.items.slice(0, this.collapseLimit)
+      const sourceItems = this.items || []
+      let limit = Math.min(Number(this.collapseLimit || 0), sourceItems.length)
+      if (limit > 0 && limit % this.itemsPerRow === 0 && sourceItems.length > limit) {
+        limit = limit - 1
+      }
+      return sourceItems.slice(0, Math.max(limit, 1))
     },
   },
   watch: {

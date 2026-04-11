@@ -24,6 +24,10 @@
           <el-switch v-model="featureState.useHeaderActionsSlot" />
         </div>
         <div class="table-demo__feature-item">
+          <span>afterResetSlot</span>
+          <el-switch v-model="featureState.useAfterResetActionsSlot" />
+        </div>
+        <div class="table-demo__feature-item">
           <span>showSelection</span>
           <el-switch v-model="featureState.showSelection" />
         </div>
@@ -87,6 +91,12 @@
           placeholder="请输入邮箱关键字（自定义插槽）"
           @keyup.enter.native="triggerSearchByEnter"
         />
+      </template>
+      <template
+        v-if="featureState.useAfterResetActionsSlot"
+        v-slot:actions-after-reset="{ formData, handleSearch: doSearch }"
+      >
+        <el-button type="text" @click="applyEnabledQuickFilter(formData, doSearch)">仅看启用</el-button>
       </template>
 
       <!-- 表格顶部工具栏插槽：header-left / header-actions -->
@@ -460,6 +470,7 @@ const featureState = ref({
   showHeaderToolbar: true,
   showAddButton: true,
   useHeaderActionsSlot: false,
+  useAfterResetActionsSlot: false,
   showSelection: true,
   showIndex: true,
   showPagination: true,
@@ -576,6 +587,14 @@ function applySort(list) {
 
 function triggerSearchByEnter() {
   handleSearch(containerRef.value ? containerRef.value.getSearchFormData() : {})
+}
+
+function applyEnabledQuickFilter(formData, doSearch) {
+  if (!formData) return
+  formData.active = true
+  if (typeof doSearch === 'function') {
+    doSearch()
+  }
 }
 
 function getStatusType(status) {
