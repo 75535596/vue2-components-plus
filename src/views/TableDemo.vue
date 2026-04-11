@@ -1,7 +1,6 @@
 <template>
   <div class="table-demo">
     <el-card shadow="never" class="table-demo__feature-card">
-      <template v-slot:header>属性能力开关（便于外部项目逐项对照）</template>
       <div class="table-demo__feature-grid">
         <div class="table-demo__feature-item">
           <span>showSearch</span>
@@ -50,6 +49,14 @@
         <div class="table-demo__feature-item">
           <span>highlightCurrentRow</span>
           <el-switch v-model="featureState.highlightCurrentRow" />
+        </div>
+        <div class="table-demo__feature-item table-demo__feature-item--inline">
+          <span>searchProps.actionsAlign</span>
+          <el-radio-group v-model="featureState.searchActionsAlign" size="mini">
+            <el-radio-button label="left">left</el-radio-button>
+            <el-radio-button label="center">center</el-radio-button>
+            <el-radio-button label="right">right</el-radio-button>
+          </el-radio-group>
         </div>
       </div>
     </el-card>
@@ -467,6 +474,7 @@ const paginationState = ref({
 const featureState = ref({
   showSearch: true,
   showSearchCollapse: true,
+  searchActionsAlign: 'left',
   showHeaderToolbar: true,
   showAddButton: true,
   useHeaderActionsSlot: false,
@@ -487,6 +495,7 @@ const mergedSearchProps = computed(function () {
     defaultSpan: 6,
     showCollapse: featureState.value.showSearchCollapse,
     collapseLimit: 4,
+    actionsAlign: featureState.value.searchActionsAlign,
   }
 })
 
@@ -923,6 +932,10 @@ onMounted(async () => {
   padding: 8px 10px;
   background: #fafafa;
   border-radius: 8px;
+}
+
+.table-demo__feature-item--inline {
+  white-space: nowrap;
 }
 
 .table-demo__toolbar-left {

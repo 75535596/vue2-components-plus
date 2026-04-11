@@ -37,7 +37,7 @@
           </el-form-item>
         </el-col>
 
-        <el-col :span="defaultSpan" class="page-search__actions">
+        <el-col :span="defaultSpan" class="page-search__actions" :class="actionAlignClass">
           <el-form-item label-width="0">
             <el-button type="primary" @click="handleSearch">查询</el-button>
             <el-button @click="handleReset">重置</el-button>
@@ -101,6 +101,10 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    actionsAlign: {
+      type: String,
+      default: 'left',
+    },
   },
   data() {
     return {
@@ -124,6 +128,13 @@ export default {
         limit = limit - 1
       }
       return sourceItems.slice(0, Math.max(limit, 1))
+    },
+    normalizedActionsAlign() {
+      const value = String(this.actionsAlign || '').toLowerCase()
+      return ['left', 'center', 'right'].includes(value) ? value : 'left'
+    },
+    actionAlignClass() {
+      return `page-search__actions--${this.normalizedActionsAlign}`
     },
   },
   watch: {
@@ -223,6 +234,30 @@ export default {
 .page-search__actions {
   display: flex;
   align-items: center;
+}
+
+.page-search__actions.page-search__actions--left {
+  justify-content: flex-start;
+}
+
+.page-search__actions.page-search__actions--center {
+  justify-content: center;
+}
+
+.page-search__actions.page-search__actions--right {
+  justify-content: flex-end;
+}
+
+.page-search__actions.page-search__actions--left /deep/ .el-form-item__content {
+  justify-content: flex-start;
+}
+
+.page-search__actions.page-search__actions--center /deep/ .el-form-item__content {
+  justify-content: center;
+}
+
+.page-search__actions.page-search__actions--right /deep/ .el-form-item__content {
+  justify-content: flex-end;
 }
 
 .page-search__actions /deep/ .el-form-item {

@@ -106,6 +106,7 @@
 | `showCollapse` | `Boolean` | `true` | 是否显示展开/收起 |
 | `collapseLimit` | `Number` | `3` | 折叠时显示数量 |
 | `slotRenderers` | `Object` | `{}` | 外部插槽渲染器映射 |
+| `actionsAlign` | `String` | `'left'` | 查询/重置按钮对齐方式，支持 `left / center / right` |
 
 ### 4.2 事件
 
@@ -114,7 +115,24 @@
 | `search` | `formData + _resetPage` | 查询触发 |
 | `reset` | - | 重置触发 |
 
-### 4.3 实例方法
+### 4.3 按钮对齐配置
+
+`NsSearch` 默认按钮居左；可通过 `actionsAlign` 配置：
+
+- `left`：按钮居左（默认）
+- `center`：按钮居中
+- `right`：按钮居右
+
+示例：
+
+```vue
+<NsSearch
+  :items="searchItems"
+  :actionsAlign="'right'"
+/>
+```
+
+### 4.4 实例方法
 
 | 方法 | 返回 | 说明 |
 |---|---|---|
@@ -124,7 +142,7 @@
 | `validate()` | `Promise<Boolean>` | 表单校验 |
 | `clearValidate(props?)` | `void` | 清除校验 |
 
-### 4.4 搜索项配置 `items[]`
+### 4.5 搜索项配置 `items[]`
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
@@ -140,7 +158,7 @@
 | `type` | `String` | `slot` 表示该项用插槽渲染 |
 | `slot` | `Boolean \| String` | 插槽开关或插槽名 |
 
-### 4.5 搜索区插槽
+### 4.6 搜索区插槽
 
 | 插槽名 | scope |
 |---|---|
