@@ -141,62 +141,89 @@ const openDialog = (options = {}) => {
     proxy.$message.error('NsDialog 尚未挂载到全局')
     return
   }
-  const offset = openIndex.value * 24
   const readOnly = !!options.readOnly
-  const resolvedOption = Object.assign(
-    {
+  const dialogConfig = {
+    title: options.title || 'NsDialog 示例（setup）',
+    class: 'dialog-demo-instance',
+    dom: FormDemo,
+    width: options.width || '900px',
+    height: options.height || '500px',
+    dialogPadding: [10, 10],
+    modal: options.modal !== undefined ? options.modal : false,
+    draggable: true,
+    maxSize: () => ({
+      width: '100%',
+      height: '100%',
+      x: 0,
+      y: 0,
+    }),
+    x: `calc(50% - 450px)`,
+    y: `calc(50% - 250px)`,
+    option: {
       readOnly,
       insideDialog: true,
       hintText: readOnly ? '当前是只读弹窗内容。' : '可以在弹窗中直接编辑表单并触发事件。',
+      ...(options.option || {}),
     },
-    options.option || {},
-  )
-  const baseEvents = Object.assign(
-    {
+    events: {
       btnClick: handleInnerButtonClick,
+      ...(options.events || {}),
     },
-    options.events || {},
-  )
-  const dialogConfig = Object.assign(
-    {
-      title: options.title || 'NsDialog 示例（setup）',
-      class: 'dialog-demo-instance',
-      dom: FormDemo,
-      option: resolvedOption,
-      events: baseEvents,
-      width: options.width || '900px',
-      height: options.height || '500px',
-      dialogPadding: [10, 10],
-      modal: options.modal !== undefined ? options.modal : false,
-      draggable: true,
-      maxSize: () => ({
-        width: '100%',
-        height: '100%',
-        x: 0,
-        y: 0,
-      }),
-      x: `calc(50% - 450px)`,
-      y: `calc(50% - 250px)`,
-      domCompleted: (domRef) => {
-        if (!options.silent && domRef && typeof domRef.showToast === 'function') {
-          domRef.showToast('弹窗内容已加载完成')
-        }
-      },
-      confirm: (closeFn, componentRef) => {
-        if (componentRef && typeof componentRef.showToast === 'function') {
-          componentRef.showToast('点击了弹窗底部确认按钮')
-        }
-        setTimeout(() => {
-          if (typeof closeFn === 'function') {
-            closeFn()
-          }
-        }, 300)
-      },
-      close: refreshInstances,
-      closed: refreshInstances,
+    domCompleted: (domRef) => {
+      if (!options.silent && domRef && typeof domRef.showToast === 'function') {
+        domRef.showToast('弹窗内容已加载完成')
+      }
     },
-    options.extraConfig || {},
-  )
+    confirm: (closeFn, componentRef) => {
+      if (componentRef && typeof componentRef.showToast === 'function') {
+        componentRef.showToast('点击了弹窗底部确认按钮')
+      }
+      setTimeout(() => {
+        if (typeof closeFn === 'function') {
+          closeFn()
+        }
+      }, 300)
+    },
+    close: refreshInstances,
+    closed: refreshInstances,
+  }
+
+  if (options.extraConfig) {
+    const extraConfig = options.extraConfig
+    if (Object.prototype.hasOwnProperty.call(extraConfig, 'modalColor')) {
+      dialogConfig.modalColor = extraConfig.modalColor
+    }
+    if (Object.prototype.hasOwnProperty.call(extraConfig, 'closeOnClickModal')) {
+      dialogConfig.closeOnClickModal = extraConfig.closeOnClickModal
+    }
+    if (Object.prototype.hasOwnProperty.call(extraConfig, 'immediately')) {
+      dialogConfig.immediately = extraConfig.immediately
+    }
+    if (Object.prototype.hasOwnProperty.call(extraConfig, 'headerDom')) {
+      dialogConfig.headerDom = extraConfig.headerDom
+    }
+    if (Object.prototype.hasOwnProperty.call(extraConfig, 'headerOption')) {
+      dialogConfig.headerOption = extraConfig.headerOption
+    }
+    if (Object.prototype.hasOwnProperty.call(extraConfig, 'headerEvents')) {
+      dialogConfig.headerEvents = extraConfig.headerEvents
+    }
+    if (Object.prototype.hasOwnProperty.call(extraConfig, 'footerDom')) {
+      dialogConfig.footerDom = extraConfig.footerDom
+    }
+    if (Object.prototype.hasOwnProperty.call(extraConfig, 'footerOption')) {
+      dialogConfig.footerOption = extraConfig.footerOption
+    }
+    if (Object.prototype.hasOwnProperty.call(extraConfig, 'footerEvents')) {
+      dialogConfig.footerEvents = extraConfig.footerEvents
+    }
+    if (Object.prototype.hasOwnProperty.call(extraConfig, 'footerCloseOnly')) {
+      dialogConfig.footerCloseOnly = extraConfig.footerCloseOnly
+    }
+    if (Object.prototype.hasOwnProperty.call(extraConfig, 'showFooter')) {
+      dialogConfig.showFooter = extraConfig.showFooter
+    }
+  }
   window.NsDialog(
     dialogConfig,
     true,
