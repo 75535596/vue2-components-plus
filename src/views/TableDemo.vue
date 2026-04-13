@@ -58,6 +58,47 @@
             <el-radio-button label="right">right</el-radio-button>
           </el-radio-group>
         </div>
+        <div class="table-demo__feature-item table-demo__feature-item--full">
+          <div class="table-demo__feature-field">
+            <span>searchProps.actionsSpan</span>
+            <el-input
+              v-length.number="2"
+              v-model="featureState.searchActionsSpan"
+              clearable
+              size="mini"
+              placeholder="1-24"
+            />
+          </div>
+          <div class="table-demo__feature-field">
+            <span>searchProps.actionsWidth</span>
+            <el-input
+              v-model="featureState.searchActionsWidth"
+              size="mini"
+              clearable
+              placeholder="如 320px / 30%"
+            />
+          </div>
+        </div>
+        <!-- <div class="table-demo__feature-item table-demo__feature-item--full">
+          <div class="table-demo__feature-field">
+            <span>searchProps.collapseToggleText[0]</span>
+            <el-input
+              v-model="featureState.searchCollapseExpandText"
+              size="mini"
+              clearable
+              placeholder="展开文案"
+            />
+          </div>
+          <div class="table-demo__feature-field">
+            <span>searchProps.collapseToggleText[1]</span>
+            <el-input
+              v-model="featureState.searchCollapseFoldText"
+              size="mini"
+              clearable
+              placeholder="收起文案"
+            />
+          </div>
+        </div> -->
       </div>
     </el-card>
 
@@ -90,6 +131,18 @@
       @page-change="handlePageChange"
       @link-click="handleLinkClick"
     >
+      <!-- 容器扩展插槽示例：extend（位于搜索区与表格之间） -->
+      <template v-slot:extend>
+        <div class="table-demo__extend">
+          <el-alert
+            type="info"
+            :closable="false"
+            show-icon
+            title="这里是 NsTableContainer 的 extend 插槽，可用于放置额外筛选信息或业务提示"
+          />
+        </div>
+      </template>
+
       <!-- 搜索项插槽示例：slot=item.slot -->
       <template v-slot:emailKeywordSlot="{ formData }">
         <el-input
@@ -475,6 +528,10 @@ const featureState = ref({
   showSearch: true,
   showSearchCollapse: true,
   searchActionsAlign: 'left',
+  searchActionsSpan: 4,
+  searchActionsWidth: '',
+  searchCollapseExpandText: '展开',
+  searchCollapseFoldText: '收起',
   showHeaderToolbar: true,
   showAddButton: true,
   useHeaderActionsSlot: false,
@@ -489,10 +546,14 @@ const featureState = ref({
 const { proxy } = getCurrentInstance() || {}
 
 const mergedSearchProps = computed(function () {
+  const actionsSpanValue = Number(featureState.value.searchActionsSpan)
   return {
     labelWidth: '90px',
     size: 'small',
     defaultSpan: 6,
+    actionsSpan: Number.isFinite(actionsSpanValue) && actionsSpanValue > 0 ? actionsSpanValue : undefined,
+    actionsWidth: featureState.value.searchActionsWidth,
+    collapseToggleText: [featureState.value.searchCollapseExpandText, featureState.value.searchCollapseFoldText],
     showCollapse: featureState.value.showSearchCollapse,
     collapseLimit: 4,
     actionsAlign: featureState.value.searchActionsAlign,
@@ -938,11 +999,32 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
+.table-demo__feature-item--full {
+  grid-column: 1 / -1;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.table-demo__feature-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.table-demo__feature-field /deep/ .el-input {
+  width: 180px;
+}
+
 .table-demo__toolbar-left {
   display: flex;
   gap: 16px;
   color: #606266;
   font-size: 13px;
+}
+
+.table-demo__extend {
+  margin-bottom: 12px;
 }
 
 .table-demo__empty-slot {

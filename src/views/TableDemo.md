@@ -94,6 +94,30 @@
 | `isRowSelected(row)` | 判断某行是否选中 |
 | `isKeySelected(key)` | 判断某 key 是否选中 |
 
+### 3.5 插槽
+
+| 插槽名 | 说明 |
+|---|---|
+| `extend` | 位于搜索区与表格之间的扩展区域，可放置业务提示、统计信息或额外操作 |
+
+```vue
+<NsTableContainer
+  :search-items="searchItems"
+  :table-data="tableData"
+  :columns="columns"
+  :total="total"
+>
+  <template v-slot:extend>
+    <el-alert
+      type="info"
+      :closable="false"
+      show-icon
+      title="这里是 extend 插槽"
+    />
+  </template>
+</NsTableContainer>
+```
+
 ## 4. `NsSearch`
 
 ### 4.1 Props
@@ -107,6 +131,9 @@
 | `collapseLimit` | `Number` | `3` | 折叠时显示数量 |
 | `slotRenderers` | `Object` | `{}` | 外部插槽渲染器映射 |
 | `actionsAlign` | `String` | `'left'` | 查询/重置按钮对齐方式，支持 `left / center / right` |
+| `actionsSpan` | `Number \| null` | `null` | 查询/重置按钮栏独立栅格，未设置时回退 `defaultSpan` |
+| `actionsWidth` | `String \| Number` | `''` | 查询/重置按钮栏独立宽度，支持如 `320px`、`30%`、`280` |
+| `collapseToggleText` | `Array \| String` | `['展开','收起']` | 展开/收起按钮文案，推荐传数组 `[展开文案, 收起文案]` |
 
 ### 4.2 事件
 
@@ -115,7 +142,7 @@
 | `search` | `formData + _resetPage` | 查询触发 |
 | `reset` | - | 重置触发 |
 
-### 4.3 按钮对齐配置
+### 4.3 按钮栏布局配置
 
 `NsSearch` 默认按钮居左；可通过 `actionsAlign` 配置：
 
@@ -123,12 +150,23 @@
 - `center`：按钮居中
 - `right`：按钮居右
 
+还可单独控制按钮栏宽度：
+
+- `actionsSpan`：按栅格系统控制按钮栏占位
+- `actionsWidth`：按固定宽度控制按钮栏展示宽度
+- `collapseToggleText`：推荐使用数组 `[展开文案, 收起文案]`，也兼容字符串 `展开文案/收起文案`
+- 同时设置时：`actionsSpan` 与 `actionsWidth` 会同时生效，实际显示宽度通常以 `actionsWidth` 为主
+- `TableDemo` 示例页中，`actionsSpan` 与 `actionsWidth` 放在同一行联动演示；`actionsSpan` 输入值会在示例代码里转成数字后再透传给 `NsSearch`
+
 示例：
 
 ```vue
 <NsSearch
   :items="searchItems"
   :actionsAlign="'right'"
+  :actionsSpan="8"
+  actionsWidth="320px"
+  :collapseToggleText="['更多', '收起']"
 />
 ```
 

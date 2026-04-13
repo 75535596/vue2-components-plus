@@ -10,7 +10,7 @@
       @search="handleSearch"
       @reset="handleReset"
     />
-
+    <slot name="extend"></slot>
     <page-table
       ref="tableRef"
       :table-data="tableData"

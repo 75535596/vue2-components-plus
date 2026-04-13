@@ -37,7 +37,12 @@
           </el-form-item>
         </el-col>
 
-        <el-col :span="defaultSpan" class="page-search__actions" :class="actionAlignClass">
+        <el-col
+          :span="resolvedActionsSpan"
+          :style="actionsColStyle"
+          class="page-search__actions"
+          :class="actionAlignClass"
+        >
           <el-form-item label-width="0">
             <el-button v-enterClick type="primary" @click="handleSearch">查询</el-button>
             <el-button @click="handleReset">重置</el-button>
@@ -51,7 +56,7 @@
               type="text"
               @click="toggleCollapse"
             >
-              <span>{{ isCollapsed ? '展开' : '收起' }}</span>
+              <span>{{ isCollapsed ? collapseToggleLabels[0] : collapseToggleLabels[1] }}</span>
               <i :class="isCollapsed ? 'el-icon-arrow-down' : 'el-icon-arrow-up'" />
             </el-button>
           </el-form-item>
@@ -105,6 +110,18 @@ export default {
       type: String,
       default: 'left',
     },
+    actionsSpan: {
+      type: Number,
+      default: null,
+    },
+    actionsWidth: {
+      type: [String, Number],
+      default: '',
+    },
+    collapseToggleText: {
+      type: [Array, String],
+      default: () => ['展开', '收起'],
+    },
   },
   data() {
     return {
@@ -135,6 +152,34 @@ export default {
     },
     actionAlignClass() {
       return `page-search__actions--${this.normalizedActionsAlign}`
+    },
+    resolvedActionsSpan() {
+      const span = Number(this.actionsSpan)
+      if (Number.isFinite(span) && span > 0) {
+        return Math.min(Math.floor(span), 24)
+      }
+      return Number(this.defaultSpan || 6)
+    },
+    actionsColStyle() {
+      const width = this.toCssSize(this.actionsWidth)
+      if (!width) return undefined
+      return {
+        flex: `0 0 ${width}`,
+        maxWidth: width,
+      }
+    },
+    collapseToggleLabels() {
+      if (Array.isArray(this.collapseToggleText)) {
+        const expandLabel = String(this.collapseToggleText[0] || '').trim()
+        const collapseLabel = String(this.collapseToggleText[1] || '').trim()
+        return [expandLabel || '展开', collapseLabel || '收起']
+      }
+      const text = String(this.collapseToggleText || '').trim()
+      if (!text) return ['展开', '收起']
+      const parts = text.split('/')
+      const expandLabel = String(parts[0] || '').trim()
+      const collapseLabel = String(parts[1] || '').trim()
+      return [expandLabel || '展开', collapseLabel || '收起']
     },
   },
   watch: {
@@ -180,6 +225,11 @@ export default {
     isSelectComponent(item) {
       const name = String(this.normalizeComponent(item.component || '') || '')
       return name === 'el-select'
+    },
+    toCssSize(value) {
+      if (value === '' || value === null || value === undefined) return ''
+      if (typeof value === 'number') return `${value}px`
+      return String(value)
     },
     handleSearch() {
       this.$emit('search', { ...this.formData, _resetPage: true })

@@ -88,7 +88,7 @@ const state = reactive({
 | `valueEmptyTag` | `String` | `'--'` | 空值占位 |
 | `formPropKey` | `String` | `'rows'` | 生成内部 `el-form-item.prop` 的前缀 |
 | `hasPoint` | `Boolean` | `false` | 是否统一显示红色星号 |
-| `labelPosition` | `String` | `'left'` | 标签方向，支持 `left / top / right` |
+| `labelPosition` | `String` | `'right'` | 标签方向，支持 `left / top / right`(默认 `right`) |
 
 ### 4.1 `labelPosition` 说明
 
