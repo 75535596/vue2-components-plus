@@ -51,8 +51,8 @@
             backgroundColor="#fff"
             labelColor="#606266"
             labelWidth="140"
-            gapH="0"
-            gapV="0"
+            gapH="20px"
+            gapV="20px"
             :labelPosition="labelPosition"
           />
         </NsFormTitle>
@@ -273,6 +273,7 @@ function createRows2() {
         component: 'ElInput',
         params: {
           clearable: true,
+          placeholder: '详细操作步骤、更换零件等',
           'v-length.range': { min: 0, max: 6000, int: true },
           rules: [{ required: true, message: '请输入时间间隔', trigger: 'blur' }],
         },
@@ -470,6 +471,7 @@ function createRows4() {
         component: 'ElInput',
         params: {
           clearable: true,
+          placeholder: '-----------',
         },
       },
     ],

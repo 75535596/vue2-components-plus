@@ -47,6 +47,7 @@
 | `pageNumberKey` | `String` | `'currentPage'` | `getPagination()` 返回对象的页码键名 |
 | `pageSizeKey` | `String` | `'pageSize'` | `getPagination()` 返回对象的条数键名 |
 | `pageTotalKey` | `String` | `'total'` | `getPagination()` 返回对象的总数键名 |
+| `enterTrigger` | `Boolean` | `true` | 是否开启回车触发“查询”按钮 |
 | `searchProps` | `Object` | `{}` | 透传给 `NsSearch` |
 | `tableProps` | `Object` | `{}` | 透传给 `NsTable` |
 | `loadData` | `Function \| null` | `null` | 分页变化时调用 |
@@ -134,6 +135,7 @@
 | `actionsSpan` | `Number \| null` | `null` | 查询/重置按钮栏独立栅格，未设置时回退 `defaultSpan` |
 | `actionsWidth` | `String \| Number` | `''` | 查询/重置按钮栏独立宽度，支持如 `320px`、`30%`、`280` |
 | `collapseToggleText` | `Array \| String` | `['展开','收起']` | 展开/收起按钮文案，推荐传数组 `[展开文案, 收起文案]` |
+| `enterTrigger` | `Boolean` | `true` | 是否给“查询”按钮挂载 `v-enterClick` |
 
 ### 4.2 事件
 
@@ -155,6 +157,7 @@
 - `actionsSpan`：按栅格系统控制按钮栏占位
 - `actionsWidth`：按固定宽度控制按钮栏展示宽度
 - `collapseToggleText`：推荐使用数组 `[展开文案, 收起文案]`，也兼容字符串 `展开文案/收起文案`
+- `enterTrigger`：默认 `true`；设为 `false` 时，回车不会自动触发查询按钮点击
 - 同时设置时：`actionsSpan` 与 `actionsWidth` 会同时生效，实际显示宽度通常以 `actionsWidth` 为主
 - `TableDemo` 示例页中，`actionsSpan` 与 `actionsWidth` 放在同一行联动演示；`actionsSpan` 输入值会在示例代码里转成数字后再透传给 `NsSearch`
 
@@ -223,6 +226,9 @@
 | `showHeaderToolbar` | `Boolean` | `true` | 是否显示头部工具栏 |
 | `showSelection` | `Boolean` | `false` | 是否显示多选列 |
 | `showIndex` | `Boolean` | `false` | 是否显示序号列 |
+| `indexWidth` | `String \| Number` | `60` | 序号列宽度 |
+| `indexAlign` | `String` | `''` | 序号列单元格对齐方式，支持 `left / center / right` |
+| `indexHeaderAlign` | `String` | `''` | 序号列表头对齐方式；未设置时回退 `indexAlign` |
 | `border` | `Boolean` | `true` | 边框 |
 | `stripe` | `Boolean` | `false` | 斑马纹 |
 | `height` | `String \| Number` | `undefined` | 固定高度 |
@@ -503,8 +509,11 @@ AI 生成页面时，建议至少覆盖下列功能点：
       rowKey: 'id',
       showSelection: true,
       showIndex: true,
+      indexWidth: 72,
+      indexAlign: 'center',
       border: true,
       stripe: true,
+      paginationLayout: 'total, sizes, prev, pager, next',
     }"
     :load-data="fetchData"
     @search="onSearch"
@@ -626,4 +635,10 @@ onMounted(() => {
   tableRef.value?.initSearchAndLoad()
 })
 </script>
+
+<style scoped>
+.table-demo /deep/ .page-table__pagination {
+  justify-content: center;
+}
+</style>
 ```

@@ -5,6 +5,7 @@
       ref="searchRef"
       :items="searchItems"
       :external-params="externalSearchParams"
+      :enter-trigger="enterTrigger"
       :slot-renderers="$scopedSlots"
       v-bind="searchProps"
       @search="handleSearch"
@@ -98,6 +99,10 @@ export default {
     searchProps: {
       type: Object,
       default: () => ({}),
+    },
+    enterTrigger: {
+      type: Boolean,
+      default: true,
     },
     tableProps: {
       type: Object,

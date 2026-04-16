@@ -27,6 +27,10 @@
           <el-switch v-model="featureState.useAfterResetActionsSlot" />
         </div>
         <div class="table-demo__feature-item">
+          <span>enterTrigger</span>
+          <el-switch v-model="featureState.enterTrigger" />
+        </div>
+        <div class="table-demo__feature-item">
           <span>showSelection</span>
           <el-switch v-model="featureState.showSelection" />
         </div>
@@ -109,6 +113,7 @@
       page-size-key="pageSize1"
       page-total-key="total1"
       :show-search="featureState.showSearch"
+      :enter-trigger="featureState.enterTrigger"
       :search-items="searchItems"
       :external-search-params="externalSearchParams"
       :search-props="mergedSearchProps"
@@ -536,6 +541,7 @@ const featureState = ref({
   showAddButton: true,
   useHeaderActionsSlot: false,
   useAfterResetActionsSlot: false,
+  enterTrigger: true,
   showSelection: true,
   showIndex: true,
   showPagination: true,
@@ -567,6 +573,8 @@ const mergedTableProps = computed(function () {
     addButtonText: '新增用户',
     showSelection: featureState.value.showSelection,
     showIndex: featureState.value.showIndex,
+    indexWidth: 72,
+    indexAlign: 'center',
     loading: loading.value,
     rowKey: 'id',
     showPagination: featureState.value.showPagination,

@@ -30,7 +30,15 @@
         @row-click="handleRowClick"
       >
         <el-table-column v-if="showSelection" type="selection" width="55" :reserve-selection="!!rowKey" />
-        <el-table-column v-if="showIndex" type="index" label="序号" width="60" :index="getIndex" />
+        <el-table-column
+          v-if="showIndex"
+          type="index"
+          label="序号"
+          :width="indexWidth"
+          :index="getIndex"
+          :align="indexAlign"
+          :header-align="indexHeaderAlign || indexAlign"
+        />
 
         <table-column
           v-for="(column, index) in columns"
@@ -107,6 +115,18 @@ export default {
     showIndex: {
       type: Boolean,
       default: false,
+    },
+    indexWidth: {
+      type: [String, Number],
+      default: 60,
+    },
+    indexAlign: {
+      type: String,
+      default: '',
+    },
+    indexHeaderAlign: {
+      type: String,
+      default: '',
     },
     border: {
       type: Boolean,

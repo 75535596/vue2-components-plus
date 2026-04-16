@@ -194,7 +194,7 @@ export default {
     },
     labelPosition: {
       type: String,
-      default: 'right',
+      default: 'left',
     },
   },
   data() {

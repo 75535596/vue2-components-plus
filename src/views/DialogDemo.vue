@@ -12,12 +12,17 @@
 
       <div class="dialog-demo__actions">
         <el-button type="primary" @click="openDialog()">打开弹窗</el-button>
+        <el-button @click="openEnterConfirmDialog">打开回车触发确认弹窗</el-button>
         <el-button @click="openReadonlyDialog">打开只读弹窗</el-button>
         <el-button @click="openCloseOnlyDialog">打开仅关闭按钮弹窗</el-button>
         <el-button @click="openCustomShellDialog">打开自定义头底部弹窗</el-button>
         <el-button @click="updateDialogOption">更新最后一个弹窗</el-button>
         <el-button @click="callDialogMethod">调用最后一个弹窗内容方法</el-button>
         <el-button type="danger" plain :disabled="!dialogInstances.length" @click="closeAllDialogs">关闭全部</el-button>
+      </div>
+      <div class="dialog-demo__size-change">
+        <el-tag size="small" :type="currentDialogStatusType">当前状态：{{ currentDialogStatusText }}</el-tag>
+        <el-tag size="small" type="info">最近 sizeChange：{{ lastSizeChangeText }}</el-tag>
       </div>
     </el-card>
 
@@ -43,11 +48,12 @@
       <el-col :span="14">
         <el-card shadow="never" class="dialog-demo__card">
           <div slot="header">能力说明</div>
-          <el-steps direction="vertical" :active="5" finish-status="success">
+          <el-steps direction="vertical" :active="6" finish-status="success">
             <el-step title="打开弹窗" description="每次打开会创建独立实例，并做错位展示。" />
             <el-step title="头尾插槽" description="支持通过 headerDom / footerDom 渲染自定义头部和底部。" />
             <el-step title="更新配置" description="可更新标题、宽高、位置以及传入内容组件的 props。" />
             <el-step title="调用方法" description="通过实例调用弹窗内部组件的公开方法，例如获取表单数据。" />
+            <el-step title="尺寸事件" description="支持 sizeChange 回调，在拖拽、最大化或还原后拿到最新宽高与坐标。" />
             <el-step title="关闭管理" description="支持关闭指定实例与一键关闭全部实例。" />
           </el-steps>
         </el-card>
@@ -57,13 +63,30 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, getCurrentInstance } from 'vue'
 import FormDemo from '@/views/FormDemo.vue'
 
 const dialogInstances = ref([])
 const openIndex = ref(0)
 const lastReadOnly = ref(false)
+const lastSizeChange = ref(null)
 const { proxy } = getCurrentInstance()
+
+const lastSizeChangeText = computed(() => {
+  if (!lastSizeChange.value) return '暂未触发'
+  const { width, height, x, y, isMaximized } = lastSizeChange.value
+  return `w:${width || '-'} h:${height || '-'} x:${x ?? '-'} y:${y ?? '-'} max:${isMaximized ? 'Y' : 'N'}`
+})
+
+const currentDialogStatusText = computed(() => {
+  if (!lastSizeChange.value) return '未知'
+  return lastSizeChange.value.isMaximized ? '最大化' : '正常'
+})
+
+const currentDialogStatusType = computed(() => {
+  if (!lastSizeChange.value) return 'info'
+  return lastSizeChange.value.isMaximized ? 'warning' : 'success'
+})
 
 const DialogHeaderBadge = {
   name: 'DialogHeaderBadge',
@@ -147,18 +170,18 @@ const openDialog = (options = {}) => {
     class: 'dialog-demo-instance',
     dom: FormDemo,
     width: options.width || '900px',
-    height: options.height || '1500px',
+    height: options.height || '500px',
     dialogPadding: [10, 10],
     modal: options.modal !== undefined ? options.modal : false,
     draggable: true,
-    // maxSize: () => ({
-    //   width: '100%',
-    //   height: '100%',
-    //   x: 0,
-    //   y: 0,
-    // }),
-    // x: `calc(50% - 450px)`,
-    // y: `calc(50% - 250px)`,
+    maxSize: () => ({
+      width: '100%',
+      height: '100%',
+      x: 0,
+      y: 0,
+    }),
+    x: `calc(50% - 450px)`,
+    y: `calc(50% - 250px)`,
     option: {
       readOnly,
       insideDialog: true,
@@ -196,6 +219,12 @@ const openDialog = (options = {}) => {
     },
     close: refreshInstances,
     closed: refreshInstances,
+    sizeChange: (payload) => {
+      if (options.onSizeChange && typeof options.onSizeChange === 'function') {
+        options.onSizeChange(payload)
+      }
+      handleDialogSizeChange(payload)
+    },
   }
 
   if (options.extraConfig) {
@@ -233,6 +262,9 @@ const openDialog = (options = {}) => {
     if (Object.prototype.hasOwnProperty.call(extraConfig, 'showFooter')) {
       dialogConfig.showFooter = extraConfig.showFooter
     }
+    if (Object.prototype.hasOwnProperty.call(extraConfig, 'enterTrigger')) {
+      dialogConfig.enterTrigger = extraConfig.enterTrigger
+    }
   }
   window.NsDialog(
     dialogConfig,
@@ -248,6 +280,18 @@ const openReadonlyDialog = () => {
   openDialog({
     readOnly: true,
     title: '只读预览弹窗（setup）',
+  })
+}
+
+const openEnterConfirmDialog = () => {
+  openDialog({
+    title: '回车触发确认弹窗',
+    option: {
+      hintText: '已开启 enterTrigger，按 Enter 可触发默认确认按钮。',
+    },
+    extraConfig: {
+      enterTrigger: true,
+    },
   })
 }
 
@@ -347,6 +391,10 @@ const handleInnerButtonClick = (payload) => {
   proxy.$message.info(`收到弹窗内容事件，共 ${keys.length} 个字段`)
 }
 
+const handleDialogSizeChange = (payload) => {
+  lastSizeChange.value = payload
+}
+
 onMounted(() => {
   refreshInstances()
   setTimeout(() => {
@@ -392,6 +440,13 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.dialog-demo__size-change {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .instance-list {

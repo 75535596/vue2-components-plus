@@ -161,6 +161,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    enterTrigger: {
+      type: Boolean,
+      default: false,
+    },
     immediately: {
       type: Boolean,
       default: false,
@@ -170,6 +174,10 @@ export default {
       default: null,
     },
     closed: {
+      type: Function,
+      default: null,
+    },
+    sizeChange: {
       type: Function,
       default: null,
     },
@@ -332,6 +340,23 @@ export default {
     this.removeModalStyle()
   },
   methods: {
+    notifySizeChange() {
+      const payload = {
+        width: this.currentWidth,
+        height: this.currentHeight,
+        x: this.currentX,
+        y: this.currentY,
+        isMaximized: this.isMaximized,
+      }
+      if (typeof this.sizeChange === 'function') {
+        this.sizeChange(payload)
+      }
+      this.$emit('sizeChange', payload)
+      const content = this.$refs.contentRef
+      if (content && typeof content.doLayout === 'function') {
+        this.$nextTick(() => content.doLayout())
+      }
+    },
     normalizeSize(value) {
       if (value === null || value === undefined || value === '') return ''
       if (typeof value === 'number' && isFinite(value)) return `${value}px`
@@ -372,7 +397,7 @@ export default {
     resolveWrapperElement() {
       return this.$el && this.$el.querySelector ? this.$el.querySelector('.el-dialog__wrapper') : null
     },
-    applyDialogLayout() {
+    applyDialogLayout(emitSizeChange = true) {
       const dialog = this.resolveDialogElement()
       if (!dialog) return
       const wrapper = this.resolveWrapperElement()
@@ -408,6 +433,9 @@ export default {
         dialog.style.left = ''
         dialog.style.top = `${centeredTop}px`
         dialog.style.margin = '0 auto'
+      }
+      if (emitSizeChange) {
+        this.notifySizeChange()
       }
     },
     updateModalStyle() {
@@ -497,7 +525,9 @@ export default {
         this.currentY = this.originalSize.y
         this.isMaximized = false
       }
-      this.$nextTick(() => this.applyDialogLayout())
+      // 先触发一次事件，保证最大化/还原都能被外部立即感知
+      this.notifySizeChange()
+      this.$nextTick(() => this.applyDialogLayout(false))
     },
     closeDialog() {
       this.visible = false
@@ -537,14 +567,13 @@ export default {
         () => {
           this.footerLoading = false
           this.visible = false
-          this.$message && this.$message.success && this.$message.success('操作成功')
         },
         this.$refs.contentRef,
         loadingController,
       )
     },
     handleKeydown(event) {
-      if (!this.visible || !this.showFooter) return
+      if (!this.visible || !this.showFooter || !this.enterTrigger) return
       if (event.key === 'Enter' && !this.footerDom && !this.footerCloseOnly) {
         event.preventDefault()
         this.dealConfirm()

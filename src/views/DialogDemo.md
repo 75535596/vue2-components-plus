@@ -76,9 +76,11 @@ const instance = window.NsDialog(
 | `footerEvents` | `Object` | `{}` | 透传给 `footerDom` 的事件 |
 | `footerButtonReverse` | `Boolean` | `false` | 仅对默认底部按钮顺序生效：`true`=确认在左、取消在右；`false`=取消在左、确认在右。当前工厂创建时会强制为 `true` |
 | `footerCloseOnly` | `Boolean` | `false` | 仅对默认底部生效；设为 `true` 时只显示关闭按钮，不显示确认按钮 |
+| `enterTrigger` | `Boolean` | `false` | 是否开启“按回车触发默认确认按钮” |
 | `immediately` | `Boolean` | `false` | 点击确认后是否先关闭再执行 `confirm` |
 | `close` | `Function` | `null` | `el-dialog` 的 `close` 阶段回调 |
 | `closed` | `Function` | `null` | `el-dialog` 的 `closed` 阶段回调；工厂会在这里销毁实例 |
+| `sizeChange` | `Function` | `null` | 尺寸变化回调，签名 `(payload) => void`，可用于在放大/还原后触发表格 `doLayout` |
 | `draggable` | `Boolean` | `false` | 是否允许拖拽标题栏 |
 | `confirm` | `Function` | `null` | 点击默认确认按钮时的回调，签名为 `(closeFn, contentRef, loadingProxy)` |
 | `x` | `Number \| String` | `null` | 固定定位 `left` |
@@ -99,6 +101,7 @@ const instance = window.NsDialog(
 | `footerEvents` | 仅透传给 `footerDom` 的事件，默认按钮不会读取这里的 `confirm` | 以为能通过 `footerEvents.confirm` 控制默认确认按钮 |
 | `footerButtonReverse` | 仅控制默认按钮顺序：`true`=确定在左，`false`=确定在右 | 以为会影响自定义 `footerDom`；不会 |
 | `footerCloseOnly` | 仅默认底部生效；`true` 时只渲染取消按钮 | 以为会隐藏自定义 footer；不会 |
+| `enterTrigger` | 控制回车是否触发默认确认；默认关闭 | 以为默认会响应 Enter；当前实现默认 `false` |
 | `immediately` | 默认确认按钮点击后是否先关窗再执行 `confirm` | 设为 `true` 时 `confirm` 拿不到 `loadingProxy` |
 | `confirm` | 默认确认按钮回调；建议手动控制 `closeFn` 与 loading 状态 | 以为 return Promise 就会自动关窗；当前实现不会自动等待 |
 | `close` / `closed` | 分别对应 `el-dialog` 的 `close` 和 `closed` 生命周期 | 误把资源释放写在 `close`；更稳妥放在 `closed` |
@@ -129,7 +132,7 @@ const instance = window.NsDialog(
 - 点击默认确认按钮后会执行 `dealConfirm`
 - 若未配置 `confirm`，按钮只会短暂进入 loading 后立即结束，不会自动关闭
 - 若配置了 `confirm` 且不调用 `closeFn()`，需要在业务侧手动 `loadingProxy.value = false` 结束 loading
-- 若 `confirm` 中调用了 `closeFn()`，组件会关闭，并自动弹出一次 `操作成功`
+- 若 `confirm` 中调用了 `closeFn()`，组件会关闭
 
 ### 5.4 底部按钮显示矩阵（默认底部）
 
@@ -159,9 +162,17 @@ const instance = window.NsDialog(
 
 ### 5.7 回车行为
 
-- 当 `visible=true`、`showFooter=true`、`footerDom` 不存在时，按回车会触发默认确认逻辑
+- 只有 `enterTrigger=true` 时，按回车才会触发默认确认逻辑
+- 触发前置条件：`visible=true`、`showFooter=true`、`footerDom` 不存在
 - 当 `footerCloseOnly=true` 时，即使使用默认底部，回车也不会触发确认
 - 如果用了自定义底部组件，回车不会自动触发 `footerEvents.confirm`
+
+### 5.8 尺寸变化事件（`sizeChange`）
+
+- 在弹窗布局更新后触发，常见场景包括初始化布局、窗口 resize、最大化/还原、拖拽定位
+- 回调参数为 `{ width, height, x, y, isMaximized }`
+- 推荐在包含 `NsTable` 时监听此事件并调用表格 `doLayout()`，避免缩放后列宽未重算导致横向滚动异常
+- 若内容组件实现了 `doLayout` 方法，当前 `NsDialog` 也会自动尝试调用一次
 
 ## 6. `confirm` 回调签名
 
@@ -257,12 +268,14 @@ instance.close()
 | 打开普通弹窗 | `dom + option + events` |
 | 打开只读弹窗 | `option.readOnly` |
 | 仅显示关闭按钮 | `footerCloseOnly=true` |
+| 开启回车确认 | `enterTrigger=true` |
 | 多开错位显示 | `x / y` 动态偏移 |
 | 自定义头部 | `headerDom + headerOption` |
 | 自定义底部 | `footerDom + footerOption + footerEvents` |
 | 禁止点击遮罩关闭 | `closeOnClickModal=false` |
 | 蓝色遮罩 | `modalColor` |
 | 最大化 | `maxSize` |
+| 监听尺寸变化 | `sizeChange` |
 | 动态切换标题和内容 props | `instance.updateOption()` |
 | 调用内容方法 | `instance.callMethod()` |
 | 全量关闭 | `this.$closeAllNsDialog()` 或 `window.closeAllNsDialog()` |

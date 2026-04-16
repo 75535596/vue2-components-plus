@@ -44,7 +44,8 @@
           :class="actionAlignClass"
         >
           <el-form-item label-width="0">
-            <el-button v-enterClick type="primary" @click="handleSearch">查询</el-button>
+            <el-button v-if="enterTrigger" v-enterClick type="primary" @click="handleSearch">查询</el-button>
+            <el-button v-else type="primary" @click="handleSearch">查询</el-button>
             <el-button @click="handleReset">重置</el-button>
             <slot-renderer
               v-if="slotRenderers['actions-after-reset']"
@@ -121,6 +122,10 @@ export default {
     collapseToggleText: {
       type: [Array, String],
       default: () => ['展开', '收起'],
+    },
+    enterTrigger: {
+      type: Boolean,
+      default: true,
     },
   },
   data() {
