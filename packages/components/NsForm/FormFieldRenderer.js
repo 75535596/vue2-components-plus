@@ -12,7 +12,17 @@ function normalizeComponent(component) {
   return component
 }
 
+function getFieldBindings(field) {
+  if (!field || typeof field !== 'object') return {}
+  return {
+    ...(field.attrs || {}),
+    ...(field.props || {}),
+    ...(field.params || {}),
+  }
+}
+
 function cloneVNodeWithSlot(vnode, slotName) {
+
   if (!vnode || slotName === 'default') {
     return vnode
   }
@@ -76,25 +86,35 @@ export default {
         'elautocomplete',
       ])
     },
-    buildProps() {
-      const params = this.field.params || {}
+    getBindings() {
+      return getFieldBindings(this.field)
+    },
+    getRenderableBindings() {
+      const bindings = this.getBindings()
       const result = {}
-      Object.keys(params).forEach((key) => {
+      Object.keys(bindings).forEach((key) => {
         if (key.indexOf('v-') === 0) return
         if (key === 'rules' || key === 'style') return
         if (key === 'options' && this.rendersOptionsByChildren()) return
-        result[key] = params[key]
+        result[key] = bindings[key]
       })
+      return result
+    },
+    buildProps() {
+      const result = this.getRenderableBindings()
       if (!this.isUpload()) {
         result.value = this.value
       }
       return result
     },
+    buildAttrs() {
+      return this.getRenderableBindings()
+    },
     buildStyle() {
-      const params = this.field.params || {}
+      const bindings = this.getBindings()
       const style = {
         ...(this.field.style || {}),
-        ...(params.style || {}),
+        ...(bindings.style || {}),
       }
       if (this.isFullWidthComponent() && style.width === undefined) {
         style.width = '100%'
@@ -104,8 +124,8 @@ export default {
 
 
     buildDirectives() {
-      const params = this.field.params || {}
-      return Object.keys(params)
+      const bindings = this.getBindings()
+      return Object.keys(bindings)
         .filter((key) => key.indexOf('v-') === 0)
         .map((key) => {
           const [, definition] = key.split('v-')
@@ -116,11 +136,12 @@ export default {
           })
           return {
             name,
-            value: params[key],
+            value: bindings[key],
             modifiers: modifierObject,
           }
         })
     },
+
     buildEvents() {
       const userEvents = this.field.events || {}
       const listeners = {}
@@ -153,9 +174,10 @@ export default {
       return scopedSlots
     },
     renderOptionNodes(h) {
-      const params = this.field.params || {}
-      const options = params.options || []
+      const bindings = this.getBindings()
+      const options = bindings.options || []
       const component = this.getComponent()
+
       if (!Array.isArray(options) || options.length === 0) {
         return []
       }
@@ -223,11 +245,13 @@ export default {
       {
         ref: 'control',
         props: this.buildProps(),
+        attrs: this.buildAttrs(),
         style: this.buildStyle(),
         on: this.buildEvents(),
         directives: this.buildDirectives(),
         scopedSlots: this.buildScopedSlots(),
       },
+
 
       [...this.renderOptionNodes(h), ...slotNodes],
     )

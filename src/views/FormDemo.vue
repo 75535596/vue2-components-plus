@@ -272,8 +272,8 @@ function createRows2() {
         value: '5',
         component: 'ElInput',
         params: {
+          placeholder: "请输入",
           clearable: true,
-          placeholder: '详细操作步骤、更换零件等',
           'v-length.range': { min: 0, max: 6000, int: true },
           rules: [{ required: true, message: '请输入时间间隔', trigger: 'blur' }],
         },
