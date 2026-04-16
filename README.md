@@ -84,16 +84,20 @@ const formConfig = [
   {
     key: 'name',
     label: '姓名',
+    value: '',
     component: 'el-input',
-    props: { placeholder: '请输入姓名' }
+    params: { placeholder: '请输入姓名', clearable: true }
   },
   {
     key: 'age',
     label: '年龄',
+    value: 18,
     component: 'el-input-number',
-    props: { min: 0, max: 100 }
+    params: { min: 0, max: 100 }
   }
 ]
+
+// 说明：NsForm 推荐把字段透传属性写在 params 中；历史代码里的 props / attrs 也兼容。
 
 // 获取表单数据
 const formData = formRef.value?.getFormData()

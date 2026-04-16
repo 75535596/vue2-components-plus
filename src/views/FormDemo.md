@@ -129,7 +129,9 @@ const rows = [
 | `value` | `Any` | 否 | 当前值 |
 | `defaultValue` | `Any` | 否 | 重置时回退值；不传时首次以当前 `value` 快照为默认值 |
 | `component` | `String \| Component` | 否 | 字段组件，例如 `ElInput` |
-| `params` | `Object` | 否 | 透传给组件的配置对象 |
+| `params` | `Object` | 否 | **推荐写法**，透传给组件的配置对象，如 `placeholder`、`clearable`、`options` |
+| `props` | `Object` | 否 | 兼容旧写法，会与 `attrs`、`params` 合并后再透传给组件 |
+| `attrs` | `Object` | 否 | 兼容旧写法，会与 `props`、`params` 合并后再透传给组件 |
 | `events` | `Object` | 否 | 透传给组件的事件对象 |
 | `slots` | `Object` | 否 | 透传给组件的插槽函数 |
 | `style` | `Object` | 否 | 组件样式 |
@@ -152,9 +154,15 @@ const rows = [
 | `'50%'` 这类百分比字符串 | 直接按百分比宽度渲染 |
 | 不传 | 当前行所有非隐藏字段均分宽度 |
 
-## 7. `params` 的特殊约定
+## 7. `params / props / attrs` 透传约定
 
-`params` 不是简单透传，它有几类保留键。
+当前实现会把 `field.attrs`、`field.props`、`field.params` 合并后再透传给字段组件，**推荐优先使用 `params`**，因为文档、示例和只读逻辑都以 `params` 为主。
+
+- **推荐**：把 `placeholder`、`clearable`、`disabled`、`options`、`formatter` 等都写在 `params` 里
+- **兼容**：历史代码里的 `props`、`attrs` 仍可继续使用
+- **合并优先级**：`attrs < props < params`，后者会覆盖前者同名配置
+
+其中 `params` 还包含几类保留键：
 
 | 键 | 当前实现 |
 |---|---|
@@ -314,6 +322,7 @@ field.slots = {
 
 - 页面外层始终使用 `el-form`
 - 每个字段都尽量提供稳定 `key`
+- 组件透传属性优先写在 `params`，如 `params.placeholder`、`params.clearable`
 - 选项类组件统一使用 `params.options`
 - 自定义指令统一放在 `params['v-xxx']`
 - 上传场景必须同步维护 `value` 和 `params.fileList`
