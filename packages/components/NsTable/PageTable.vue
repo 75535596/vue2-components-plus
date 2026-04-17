@@ -13,7 +13,7 @@
     <div class="page-table__main">
       <el-table
         ref="tableRef"
-        v-loading="loading"
+        v-loading="showLoading && loading"
         :data="tableData"
         :border="border"
         :stripe="stripe"
