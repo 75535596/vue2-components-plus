@@ -22,7 +22,7 @@
   :table-data="tableData"
   :columns="columns"
   :total="total"
-  :table-props="{ rowKey: 'id', showSelection: true, showIndex: true }"
+  :table-props="{ rowKey: 'id', showSelection: true, showIndex: true, showLoading: true }"
   :load-data="fetchData"
   @search="handleSearch"
   @selection-change="handleSelectionChange"

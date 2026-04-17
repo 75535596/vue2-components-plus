@@ -164,6 +164,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    showLoading: {
+      type: Boolean,
+      default: true,
+    },
     showPagination: {
       type: Boolean,
       default: true,

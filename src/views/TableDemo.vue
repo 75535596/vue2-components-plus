@@ -43,6 +43,10 @@
           <el-switch v-model="featureState.showPagination" />
         </div>
         <div class="table-demo__feature-item">
+          <span>showLoading</span>
+          <el-switch v-model="featureState.showLoading" />
+        </div>
+        <div class="table-demo__feature-item">
           <span>border</span>
           <el-switch v-model="featureState.border" />
         </div>
