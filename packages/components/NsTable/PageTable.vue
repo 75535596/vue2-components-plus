@@ -13,7 +13,7 @@
     <div class="page-table__main">
       <el-table
         ref="tableRef"
-        v-loading="showLoading && loading"
+        v-loading="loading"
         :data="tableData"
         :border="border"
         :stripe="stripe"
@@ -163,10 +163,6 @@ export default {
     loading: {
       type: Boolean,
       default: false,
-    },
-    showLoading: {
-      type: Boolean,
-      default: true,
     },
     showPagination: {
       type: Boolean,

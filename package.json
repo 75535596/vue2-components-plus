@@ -1,6 +1,6 @@
 {
   "name": "vue2-components-plus",
-  "version": "1.0.66",
+  "version": "1.0.68",
   "private": false,
   "type": "module",
   "main": "./dist/vue2-components-plus.umd.cjs",

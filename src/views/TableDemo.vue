@@ -43,10 +43,6 @@
           <el-switch v-model="featureState.showPagination" />
         </div>
         <div class="table-demo__feature-item">
-          <span>showLoading</span>
-          <el-switch v-model="featureState.showLoading" />
-        </div>
-        <div class="table-demo__feature-item">
           <span>border</span>
           <el-switch v-model="featureState.border" />
         </div>
@@ -549,7 +545,6 @@ const featureState = ref({
   showSelection: true,
   showIndex: true,
   showPagination: true,
-  showLoading: true,
   border: true,
   stripe: true,
   highlightCurrentRow: true,
@@ -581,7 +576,6 @@ const mergedTableProps = computed(function () {
     indexWidth: 72,
     indexAlign: 'center',
     loading: loading.value,
-    showLoading: featureState.value.showLoading,
     rowKey: 'id',
     showPagination: featureState.value.showPagination,
     pageSizes: [5, 10, 20],
