@@ -121,19 +121,11 @@
       :columns="columns"
       :action-buttons="actionButtons"
       :total="total"
-      :current-page.sync="paginationState.currentPage"
-      :page-size.sync="paginationState.pageSize"
       :table-props="mergedTableProps"
-      :load-data="loadData"
-      @search="handleSearch"
+      @search="loadData"
       @reset="handleReset"
       @add="handleAdd"
       @selection-change="handleSelectionChange"
-      @sort-change="handleSortChange"
-      @row-click="handleRowClick"
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      @page-change="handlePageChange"
       @link-click="handleLinkClick"
     >
       <!-- 容器扩展插槽示例：extend（位于搜索区与表格之间） -->
@@ -151,9 +143,9 @@
       <!-- 搜索项插槽示例：slot=item.slot -->
       <template v-slot:emailKeywordSlot="{ formData }">
         <el-input
-          v-model="formData.emailKeyword"
+          v-model="formData.body"
           clearable
-          placeholder="请输入邮箱关键字（自定义插槽）"
+          placeholder="请输入正文关键字（自定义插槽）"
           @keyup.enter.native="triggerSearchByEnter"
         />
       </template>
@@ -180,26 +172,13 @@
       <template v-slot:usernameHeader>
         <span>
           <i class="el-icon-link" />
-          用户名（link）
+          标题（link）
         </span>
-      </template>
-
-      <!-- 单元格插槽示例：column.slot -->
-      <template v-slot:status="{ row }">
-        <el-tag size="small" :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-      </template>
-      <template v-slot:gender="{ row }">
-        <el-tag size="small" :type="row.gender === 1 ? 'primary' : 'danger'">
-          {{ row.gender === 1 ? '男' : '女' }}
-        </el-tag>
-      </template>
-      <template v-slot:department="{ row }">
-        <el-tag size="small" effect="plain">{{ getDepartmentText(row.department) }}</el-tag>
       </template>
 
       <!-- action 按钮插槽示例：button.slot -->
       <template v-slot:deleteAction="{ row }">
-        <el-button type="text" style="color: #f56c6c" :disabled="row.status === 0" @click="handleDelete(row)">
+        <el-button type="text" style="color: #f56c6c" @click="handleDelete(row)">
           删除
         </el-button>
       </template>
@@ -243,129 +222,59 @@
 
 <script setup>
 import { computed, getCurrentInstance, nextTick, onMounted, ref, watch } from 'vue'
-import { departmentOptions, fetchDepartmentOptions, fetchStatusOptions, filterUsers, mockUsers } from './mockData'
+
+const POSTS_API = 'https://jsonplaceholder.typicode.com/posts'
 
 function createSearchItems() {
   return [
     {
-      prop: 'month',
-      label: '归属月',
+      prop: 'id',
+      label: '帖子 ID',
+      span: 6,
+      component: 'ElInputNumber',
+      attrs: {
+        placeholder: '精确匹配（?id=）',
+        controlsPosition: 'right',
+        min: 1,
+        max: 100,
+      },
+    },
+    {
+      prop: 'userId',
+      label: '用户 ID',
       span: 6,
       component: 'ElSelect',
       attrs: {
-        placeholder: '请选择归属月',
+        placeholder: '精确匹配（?userId=）',
         clearable: true,
       },
-      children: Array.from({ length: 12 }, function (_, index) {
+      children: Array.from({ length: 10 }, function (_, index) {
         return {
-          label: index + 1 + '月',
-          value: String(index + 1),
+          label: '用户 ' + (index + 1),
+          value: index + 1,
         }
       }),
-    },
-    {
-      prop: 'username',
-      label: '用户名',
-      span: 6,
-      component: 'ElInput',
-      attrs: {
-        placeholder: '请输入用户名',
-        clearable: true,
-      },
       events: {},
     },
     {
-      prop: 'realName',
-      label: '真实姓名',
+      prop: 'q',
+      label: '关键字',
       span: 6,
       component: 'ElInput',
       attrs: {
-        placeholder: '请输入真实姓名',
+        placeholder: '在 title / body 中模糊匹配（?q=）',
         clearable: true,
       },
     },
     {
-      prop: 'emailKeyword',
-      label: '邮箱关键字',
+      prop: 'body',
+      label: '正文关键字',
       span: 6,
       type: 'slot',
       slot: 'emailKeywordSlot',
       formItemAttrs: {
         required: false,
       },
-    },
-    {
-      prop: 'status',
-      label: '状态',
-      span: 6,
-      component: 'ElSelect',
-      attrs: {
-        placeholder: '请选择状态',
-        clearable: true,
-      },
-      children: [],
-    },
-    {
-      prop: 'department',
-      label: '部门',
-      span: 6,
-      component: 'ElSelect',
-      attrs: {
-        placeholder: '请选择部门',
-        clearable: true,
-        filterable: true,
-      },
-      children: [],
-    },
-    {
-      prop: 'gender',
-      label: '性别',
-      span: 6,
-      component: 'ElSelect',
-      attrs: {
-        placeholder: '请选择性别',
-        clearable: true,
-      },
-      children: [
-        { label: '全部', value: '' },
-        { label: '男', value: 1 },
-        { label: '女', value: 2 },
-      ],
-    },
-    {
-      prop: 'createTime',
-      label: '创建时间',
-      span: 6,
-      component: 'ElDatePicker',
-      attrs: {
-        type: 'daterange',
-        clearable: true,
-        rangeSeparator: '至',
-        startPlaceholder: '开始日期',
-        endPlaceholder: '结束日期',
-        valueFormat: 'yyyy-MM-dd',
-      },
-    },
-    {
-      prop: 'phone',
-      label: '手机号',
-      span: 6,
-      component: 'ElInput',
-      attrs: {
-        placeholder: '请输入手机号',
-        clearable: true,
-      },
-    },
-    {
-      prop: 'active',
-      label: '是否激活',
-      span: 6,
-      component: 'ElSwitch',
-      attrs: {
-        activeText: '是',
-        inactiveText: '否',
-      },
-      defaultValue: true,
     },
   ]
 }
@@ -375,94 +284,38 @@ function createColumns(context) {
     {
       prop: 'id',
       label: 'ID',
-      width: 70,
-      sortable: true,
+      width: 80,
+      sortable: 'custom',
       fixed: 'left',
+      align: 'center',
     },
     {
-      prop: 'avatar',
-      label: '头像(image)',
-      width: 110,
-      type: 'image',
-      imageWidth: '34px',
-      imageHeight: '34px',
+      prop: 'userId',
+      label: '用户 ID',
+      width: 100,
+      sortable: 'custom',
+      align: 'center',
     },
     {
-      label: '基本信息',
-      children: [
-        {
-          prop: 'username',
-          label: '用户名',
-          minWidth: 150,
-          type: 'link',
-          headerSlot: 'usernameHeader',
-          linkText: '查看用户',
-        },
-        {
-          prop: 'realName',
-          label: '真实姓名',
-          width: 120,
-        },
-        {
-          prop: 'gender',
-          label: '性别',
-          width: 90,
-          slot: 'gender',
-        },
-        {
-          prop: 'level',
-          label: '级别(enum)',
-          width: 120,
-          enum: [
-            { label: '初级', value: 1 },
-            { label: '中级', value: 2 },
-            { label: '高级', value: 3 },
-          ],
-        },
-      ],
+      prop: 'title',
+      label: '标题(link)',
+      minWidth: 260,
+      type: 'link',
+      headerSlot: 'usernameHeader',
+      linkText: function (row) {
+        return row.title
+      },
     },
     {
-      label: '组织信息',
-      children: [
-        {
-          prop: 'department',
-          label: '部门',
-          width: 130,
-          slot: 'department',
-        },
-        {
-          prop: 'status',
-          label: '状态(slot)',
-          width: 110,
-          slot: 'status',
-        },
-      ],
-    },
-    {
-      label: '联系方式',
-      children: [
-        {
-          prop: 'phone',
-          label: '手机号',
-          width: 140,
-        },
-        {
-          prop: 'email',
-          label: '邮箱',
-          minWidth: 220,
-        },
-      ],
-    },
-    {
-      prop: 'createTime',
-      label: '创建时间',
-      width: 180,
-      sortable: true,
+      prop: 'body',
+      label: '正文',
+      minWidth: 320,
+      showOverflowTooltip: true,
     },
     {
       type: 'action',
       label: '操作(action)',
-      width: 300,
+      width: 220,
       fixed: 'right',
       buttons: [
         {
@@ -482,19 +335,6 @@ function createColumns(context) {
           },
         },
         {
-          label: '禁用',
-          type: 'text',
-          show: function (row) {
-            return row.status === 1
-          },
-          disabled: function (row) {
-            return row.id % 2 === 0
-          },
-          handler: function (row) {
-            context.handleDisable(row)
-          },
-        },
-        {
           label: '删除',
           type: 'text',
           icon: 'el-icon-delete',
@@ -509,26 +349,12 @@ const containerRef = ref()
 const loading = ref(false)
 const total = ref(0)
 const tableData = ref([])
-const searchParams = ref({})
-const sortState = ref({
-  prop: '',
-  order: '',
-})
 const selectedKeys = ref([])
 const eventLogs = ref([])
-const paginationMode = ref('backend')
-const mockUserCount = mockUsers.length
-const externalSearchParams = {
-  source: 'vue2-demo',
-  active: true,
-}
+const externalSearchParams = {}
 const actionButtons = [{ label: '导出', key: 'export' }]
 const searchItems = ref(createSearchItems())
 const columns = ref([])
-const paginationState = ref({
-  currentPage: 1,
-  pageSize: 10,
-})
 const featureState = ref({
   showSearch: true,
   showSearchCollapse: true,
@@ -561,7 +387,7 @@ const mergedSearchProps = computed(function () {
     actionsWidth: featureState.value.searchActionsWidth,
     collapseToggleText: [featureState.value.searchCollapseExpandText, featureState.value.searchCollapseFoldText],
     showCollapse: featureState.value.showSearchCollapse,
-    collapseLimit: 4,
+    collapseLimit: 3,
     actionsAlign: featureState.value.searchActionsAlign,
   }
 })
@@ -611,164 +437,89 @@ function logEvent(name, payload) {
   eventLogs.value = eventLogs.value.slice(0, 20)
 }
 
-function enrichRows(list) {
-  return (list || []).map(function (item) {
-    return {
-      ...item,
-      level: (item.id % 3) + 1,
-    }
-  })
-}
-
-function normalizeSearchParams(params) {
-  const next = Object.assign({}, params)
-  if (typeof next.emailKeyword === 'string') {
-    next.emailKeyword = next.emailKeyword.trim()
-  }
-  if (typeof next.username === 'string') {
-    next.username = next.username.trim()
-  }
-  return next
-}
-
-function applyExtraFilters(list) {
-  if (!searchParams.value.emailKeyword) return list
-  return list.filter(function (item) {
-    return String(item.email || '').toLowerCase().indexOf(String(searchParams.value.emailKeyword).toLowerCase()) > -1
-  })
-}
-
-function compareValue(a, b) {
-  if (a === b) return 0
-  if (a === undefined || a === null) return -1
-  if (b === undefined || b === null) return 1
-  const maybeDateA = new Date(a).getTime()
-  const maybeDateB = new Date(b).getTime()
-  if (!Number.isNaN(maybeDateA) && !Number.isNaN(maybeDateB)) {
-    return maybeDateA - maybeDateB
-  }
-  if (typeof a === 'number' && typeof b === 'number') {
-    return a - b
-  }
-  return String(a).localeCompare(String(b))
-}
-
-function applySort(list) {
-  if (!sortState.value.prop || !sortState.value.order) {
-    return list
-  }
-  const direction = sortState.value.order === 'ascending' ? 1 : -1
-  return (list || []).slice().sort(function (left, right) {
-    return compareValue(left[sortState.value.prop], right[sortState.value.prop]) * direction
-  })
-}
-
 function triggerSearchByEnter() {
-  handleSearch(containerRef.value ? containerRef.value.getSearchFormData() : {})
+  if (containerRef.value && containerRef.value.reload) {
+    containerRef.value.reload()
+  }
 }
 
 function applyEnabledQuickFilter(formData, doSearch) {
   if (!formData) return
-  formData.active = true
+  formData.userId = 1
   if (typeof doSearch === 'function') {
     doSearch()
   }
 }
 
-function getStatusType(status) {
-  return status === 1 ? 'success' : 'danger'
-}
-
-function getStatusText(status) {
-  return status === 1 ? '启用' : '禁用'
-}
-
-function getDepartmentText(value) {
-  const matched = departmentOptions.find(function (item) {
-    return item.value === value
+function buildQuery(params) {
+  const usp = new URLSearchParams()
+  Object.keys(params).forEach(function (key) {
+    const value = params[key]
+    if (value === undefined || value === null || value === '') return
+    usp.append(key, String(value))
   })
-  return matched ? matched.label : value
+  return usp.toString()
 }
 
-function getCurrentPagination() {
-  return containerRef.value && containerRef.value.getPagination
-    ? containerRef.value.getPagination()
-    : { currentPage1: 1, pageSize1: paginationState.value.pageSize }
-}
-
-function paginateList(list, pagination) {
-  const currentPage = Number(pagination.currentPage1 || 1)
-  const pageSize = Number(pagination.pageSize1 || 10)
-  const start = (currentPage - 1) * pageSize
-  return (list || []).slice(start, start + pageSize)
-}
-
-function resetContainerPage() {
-  paginationState.value.currentPage = 1
-  if (containerRef.value && containerRef.value.internalPagination) {
-    containerRef.value.internalPagination.currentPage = 1
+async function fetchPosts(query) {
+  const params = query || {}
+  const requestParams = {
+    _page: params.currentPage1 || 1,
+    _limit: params.pageSize1 || 10,
   }
-}
-
-function handlePaginationModeChange() {
-  if (containerRef.value) {
-    containerRef.value.clearAllSelection()
+  const keyword = String(params.q || '').trim()
+  if (keyword) requestParams.q = keyword
+  if (params.id) requestParams.id = params.id
+  if (params.userId) requestParams.userId = params.userId
+  const body = String(params.body || '').trim()
+  if (body) requestParams.body_like = body
+  const sort = params.sort || {}
+  if (sort.prop && sort.order) {
+    requestParams._sort = sort.prop
+    requestParams._order = sort.order === 'ascending' ? 'asc' : 'desc'
   }
-  selectedKeys.value = []
-  resetContainerPage()
-  logEvent('pagination-mode-change', paginationMode.value)
-  loadData()
-  proxy.$message.success('已切换为' + (paginationMode.value === 'frontend' ? '前端分页' : '后端分页'))
+
+  const response = await fetch(POSTS_API + '?' + buildQuery(requestParams), {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  })
+  if (!response.ok) {
+    throw new Error('HTTP ' + response.status)
+  }
+  const list = await response.json()
+  const totalHeader = Number(response.headers.get('x-total-count')) || (Array.isArray(list) ? list.length : 0)
+  return { list: Array.isArray(list) ? list : [], total: totalHeader }
 }
 
-async function loadData() {
+async function loadData(query) {
   loading.value = true
   try {
-    await new Promise(function (resolve) {
-      setTimeout(resolve, 250)
-    })
-
-    const pageConfig = {
-      pageNumberKey: 'currentPage1',
-      pageSizeKey: 'pageSize1',
+    logEvent('search', query)
+    const result = await fetchPosts(query)
+    let list = result.list
+    if (query && query.body) {
+      const keyword = String(query.body).trim().toLowerCase()
+      if (keyword) {
+        list = list.filter(function (item) {
+          return String(item.body || '').toLowerCase().indexOf(keyword) !== -1
+        })
+      }
     }
-
-    const filtered = filterUsers(
-      mockUsers,
-      searchParams.value,
-      { currentPage1: 1, pageSize1: mockUserCount || 10 },
-      pageConfig,
-    )
-    const enrichedList = enrichRows(filtered.list)
-    const extraFilteredList = applyExtraFilters(enrichedList)
-    const sortedList = applySort(extraFilteredList)
-
-    if (paginationMode.value === 'frontend') {
-      const pagination = getCurrentPagination()
-      tableData.value = paginateList(sortedList, pagination)
-      total.value = sortedList.length
-      return
-    }
-
-    const pagination = getCurrentPagination()
-    tableData.value = paginateList(sortedList, pagination)
-    total.value = sortedList.length
+    tableData.value = list
+    total.value = result.total
   } catch (error) {
-    proxy.$message.error('加载表格数据失败')
+    if (proxy && proxy.$message) {
+      proxy.$message.error('加载表格数据失败：' + (error && error.message ? error.message : ''))
+    }
+    tableData.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }
 }
 
-function handleSearch(params) {
-  const normalized = normalizeSearchParams(params)
-  searchParams.value = normalized
-  logEvent('search', normalized)
-  loadData()
-}
-
 function handleReset() {
-  logEvent('reset', searchParams.value)
+  logEvent('reset', {})
   proxy.$message.info('搜索条件已重置')
 }
 
@@ -780,37 +531,12 @@ function handleSelectionChange(selection) {
   logEvent('selection-change', keys)
 }
 
-function handleSortChange(sort) {
-  sortState.value = sort || { prop: '', order: '' }
-  logEvent('sort-change', sortState.value)
-  loadData()
-}
-
-function handleRowClick(row, column) {
-  logEvent('row-click', {
-    id: row.id,
-    column: column && column.property,
-  })
-}
-
-function handleSizeChange(size) {
-  logEvent('size-change', size)
-}
-
-function handleCurrentChange(page) {
-  logEvent('current-change', page)
-}
-
-function handlePageChange(payload) {
-  logEvent('page-change', payload)
-}
-
 function handleLinkClick(row, column) {
   logEvent('link-click', {
     id: row.id,
     prop: column && column.prop,
   })
-  proxy.$message.info('点击了链接列：' + row.username)
+  proxy.$message.info('点击了标题链接：#' + row.id)
 }
 
 function getSelectedRows() {
@@ -854,9 +580,9 @@ function checkSelection() {
 function setSearchForm() {
   if (!containerRef.value) return
   containerRef.value.setSearchFormData({
-    username: 'zhang',
-    status: 1,
-    emailKeyword: 'example',
+    userId: 1,
+    q: 'qui',
+    body: 'rerum',
   })
   proxy.$message.success('已回填搜索条件，可点击“查询”查看效果')
 }
@@ -868,16 +594,19 @@ function resetSearchForm() {
 }
 
 function reloadWithMessage() {
-  loadData()
+  if (containerRef.value && containerRef.value.reload) {
+    containerRef.value.reload()
+  }
   proxy.$message.success('已刷新数据')
 }
 
 function clearSortState() {
-  sortState.value = {
-    prop: '',
-    order: '',
+  if (containerRef.value && containerRef.value.$refs && containerRef.value.$refs.tableRef && containerRef.value.$refs.tableRef.clearSort) {
+    containerRef.value.$refs.tableRef.clearSort()
   }
-  loadData()
+  if (containerRef.value && containerRef.value.reload) {
+    containerRef.value.reload()
+  }
   proxy.$message.success('已重置排序')
 }
 
@@ -887,28 +616,22 @@ function handleAdd() {
 }
 
 function handleView(row) {
-  proxy.$message.info('查看：' + row.username)
+  proxy.$message.info('查看：#' + row.id + ' ' + row.title)
 }
 
 function handleEdit(row) {
-  proxy.$message.success('编辑：' + row.username)
-}
-
-function handleDisable(row) {
-  proxy.$message.warning('已模拟禁用：' + row.username)
+  proxy.$message.success('编辑：#' + row.id + ' ' + row.title)
 }
 
 function handleDelete(row) {
-  if (row.status === 0) {
-    proxy.$message.warning('禁用状态用户不可删除')
-    return
-  }
-  proxy.$confirm('确认删除用户“' + row.username + '”吗？', '提示', {
+  proxy.$confirm('确认删除帖子“' + row.title + '”吗？', '提示', {
     type: 'warning',
   })
     .then(() => {
-      proxy.$message.success('已模拟删除：' + row.username)
-      loadData()
+      proxy.$message.success('已模拟删除：#' + row.id)
+      if (containerRef.value && containerRef.value.reload) {
+        containerRef.value.reload()
+      }
     })
     .catch(function () {})
 }
@@ -925,7 +648,6 @@ watch(
 columns.value = createColumns({
   handleView,
   handleEdit,
-  handleDisable,
   handleDelete,
 })
 searchItems.value[1].events.keyup = function (event) {
@@ -935,12 +657,8 @@ searchItems.value[1].events.keyup = function (event) {
 }
 
 onMounted(async () => {
-  const statusOptions = await fetchStatusOptions()
-  const departmentList = await fetchDepartmentOptions()
-  searchItems.value[4].children = statusOptions
-  searchItems.value[5].children = departmentList
   await nextTick()
-  if (containerRef.value) {
+  if (containerRef.value && containerRef.value.initSearchAndLoad) {
     containerRef.value.initSearchAndLoad()
   }
 })

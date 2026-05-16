@@ -23,11 +23,12 @@
   :columns="columns"
   :total="total"
   :table-props="{ rowKey: 'id', showSelection: true, showIndex: true }"
-  :load-data="fetchData"
   @search="handleSearch"
   @selection-change="handleSelectionChange"
 />
 ```
+
+> 数据加载只需监听 `@search` 事件即可。容器会在搜索、重置、分页、排序变化时统一通过 `emitSearch()` 重新派发该事件，事件参数即可作为请求体直接发出。
 
 ## 3. `NsTableContainer`
 
@@ -36,56 +37,70 @@
 | 属性 | 类型 | 默认值 | 说明 |
 |---|---|---|---|
 | `showSearch` | `Boolean` | `true` | 是否显示搜索区 |
-| `externalSearchParams` | `Object` | `{}` | 搜索默认值或外部回填值 |
+| `externalSearchParams` | `Object` | `{}` | 搜索默认值或外部回填值（合并到搜索表单初始值） |
 | `searchItems` | `Array` | `[]` | 搜索配置 |
 | `tableData` | `Array` | `[]` | 表格数据 |
 | `columns` | `Array` | `[]` | 列配置 |
-| `actionButtons` | `Array` | `[]` | 预留字段，当前未直接渲染 |
+| `actionButtons` | `Array` | `[]` | 预留字段，当前未直接渲染（可由业务方在 `header-actions` 插槽中自行使用） |
 | `total` | `Number` | `0` | 总条数 |
-| `currentPage` | `Number \| null` | `null` | 受控页码 |
-| `pageSize` | `Number \| null` | `null` | 受控每页条数 |
-| `pageNumberKey` | `String` | `'currentPage'` | `getPagination()` 返回对象的页码键名 |
-| `pageSizeKey` | `String` | `'pageSize'` | `getPagination()` 返回对象的条数键名 |
+| `pageNumberKey` | `String` | `'currentPage'` | `@search` 事件参数 / `getPagination()` 中的页码键名 |
+| `pageSizeKey` | `String` | `'pageSize'` | `@search` 事件参数 / `getPagination()` 中的条数键名 |
 | `pageTotalKey` | `String` | `'total'` | `getPagination()` 返回对象的总数键名 |
 | `enterTrigger` | `Boolean` | `true` | 是否开启回车触发“查询”按钮 |
 | `searchProps` | `Object` | `{}` | 透传给 `NsSearch` |
 | `tableProps` | `Object` | `{}` | 透传给 `NsTable` |
-| `loadData` | `Function \| null` | `null` | 分页变化时调用 |
+| `useDefaultPage` | `Boolean` | `true` | `true` 使用容器内部维护的页码 / 页大小（推荐，TableDemo.vue 即为此模式）；`false` 走外部 `currentPage / pageSize` 受控模式，并随分页变化派发 `update:currentPage`、`update:pageSize` |
+| `currentPage` | `Number \| null` | `null` | 受控页码，仅在 `useDefaultPage=false` 时使用 |
+| `pageSize` | `Number \| null` | `null` | 受控每页条数，仅在 `useDefaultPage=false` 时使用 |
 
 ### 3.2 事件
 
+容器对外暴露的事件分两类：业务必需事件（推荐监听） 与 内部冗余事件（默认不必监听）。
+
+#### 3.2.1 推荐监听的事件
+
 | 事件 | 参数 | 说明 |
 |---|---|---|
-| `search` | `params` | 查询触发 |
-| `reset` | - | 搜索区重置完成 |
-| `add` | - | 顶部新增按钮点击 |
-| `selection-change` | `selection` | 选中行变化 |
-| `sort-change` | `sort` | 排序变化 |
-| `row-click` | `row, column, event` | 行点击 |
-| `link-click` | `row, column` | link 列点击 |
-| `size-change` | `size` | 每页条数变化 |
-| `current-change` | `page` | 页码变化 |
-| `page-change` | `{ currentPage, pageSize }` | 页码或条数变化后的统一事件 |
-| `update:currentPage` | `page` | 双向绑定页码 |
-| `update:pageSize` | `size` | 双向绑定条数 |
+| `search` | `params` | 搜索 / 重置 / 翻页 / 切换条数 / 排序变化时统一派发；参数已合并搜索表单值 + 分页 + 排序，可直接发给后端 |
+| `reset` | - | 搜索区点击“重置”后触发（之后会再派发一次 `search`） |
+| `add` | - | 顶部默认新增按钮点击 |
+| `selection-change` | `selection` | 选中行变化（容器维护跨页选择，参数为跨页累计选中行） |
+| `link-click` | `row, column` | `type: 'link'` 列文本点击 |
+
+> 数据加载只接 `@search` 一个事件即可；TableDemo.vue 也是这种用法。
+
+#### 3.2.2 内部冗余事件（默认不必监听）
+
+| 事件 | 参数 | 说明 |
+|---|---|---|
+| `sort-change` | `sort` | 排序变化（已包含在 `search` 事件 `sort` 字段中） |
+| `row-click` | `row, column, event` | 行点击；仅在需要业务化高亮 / 单击响应时监听 |
+| `size-change` | `size` | 每页条数变化（`search` 已覆盖） |
+| `current-change` | `page` | 页码变化（`search` 已覆盖） |
+| `page-change` | `{ currentPage, pageSize }` | 页码或条数变化后的统一事件（`search` 已覆盖） |
+| `update:currentPage` | `page` | 双向绑定页码（仅 `useDefaultPage=false` 受控模式使用） |
+| `update:pageSize` | `size` | 双向绑定条数（仅 `useDefaultPage=false` 受控模式使用） |
 
 ### 3.3 当前实现的关键行为
 
 - 搜索或重置时会先清空选中状态
 - `NsSearch` 触发查询时会携带 `_resetPage: true`，容器收到后会把页码重置为 `1`
-- `handleSizeChange` 与 `handleCurrentChange` 会自动调用 `loadData()`
-- `initSearchAndLoad()` 在 `showSearch=true` 时优先触发 `search` 事件，而不是直接调用 `loadData()`
+- 翻页 / 切换每页条数 / 排序变化时，容器内部会通过 `emitSearch()` 重新派发 `search` 事件，业务侧只需监听 `@search` 即可统一刷新数据；不需要额外调用 `loadData`
+- `emitSearch()` 派发的参数包含：合并后的搜索表单值 + `[pageNumberKey]` / `[pageSizeKey]` 当前页码与条数 + `sort: { prop, order }` 排序状态
+- `initSearchAndLoad()` 在 `showSearch=true` 时优先读取搜索表单数据后再触发 `search` 事件
+- 排序、`size-change`、`current-change` 之外，容器还会派发统一事件 `page-change`（含 `currentPage / pageSize`）
 
 ### 3.4 实例方法
 
 | 方法 | 说明 |
 |---|---|
-| `initSearchAndLoad()` | 初始化查询 |
+| `initSearchAndLoad()` | 初始化查询；优先读取搜索表单数据后派发 `search` 事件 |
+| `reload()` | 以当前搜索条件 + 分页 + 排序重新派发 `search` 事件 |
 | `getSearchFormData()` | 读取搜索表单 |
 | `setSearchFormData(data)` | 回填搜索表单 |
 | `resetSearchForm()` | 重置搜索表单 |
 | `validateSearchForm()` | 校验搜索表单 |
-| `getPagination()` | 获取分页对象 |
+| `getPagination()` | 获取分页对象，键名遵循 `pageNumberKey / pageSizeKey / pageTotalKey` |
 | `getSelectionRows()` | 获取选中行 |
 | `getSelectionKeys()` | 获取选中 key |
 | `setSelectionRows(rows)` | 设置选中行 |
@@ -465,19 +480,23 @@ AI 生成页面时，建议至少覆盖下列功能点：
 |---|---|
 | 搜索区 | `ElInput`、`ElSelect`、`slot` 项、默认值、折叠展开 |
 | 表格列 | 普通列、分组列、tag、image、link、slot、headerSlot、action |
-| 交互 | `search`、`reset`、`add`、`selection-change`、`sort-change`、`row-click`、`link-click` |
+| 交互 | `search`、`reset`、`add`、`selection-change`、`link-click`（其它分页 / 排序事件可不再单独接） |
 | 选择 | `rowKey`、跨页选择、批量操作 |
 | 扩展 | `actions-after-reset`、`header-actions`、`empty` |
 
 ## 10. AI 生成代码规则
 
 - 优先使用 `NsTableContainer`
+- 数据加载统一通过监听 `@search` 事件完成；事件参数已合并 搜索值 + 分页 + 排序，可直接发给后端
+- 不要再向 `NsTableContainer` 传 `:load-data` 属性，组件无此 prop
+- 默认 `useDefaultPage=true` 模式下，不需要绑定 `:current-page.sync` / `:page-size.sync`，也不需要单独监听 `@sort-change / @size-change / @current-change / @page-change`
 - 列配置只写当前实现支持的字段
 - `slotRenderers` 写成 `(scope) => VNode`
 - 动作按钮显隐逻辑用 `show(row)`，不要依赖第二个参数
 - 如需跨页勾选，必须配置 `tableProps.rowKey`
 - 若用自定义 `header-actions`，不要再依赖默认新增按钮
 - 如果使用 `setPagination()`，传入对象必须是 `{ currentPage, pageSize }`
+- 需要服务端排序时，`columns[].sortable` 应写为 `'custom'`，`@search` 事件参数中的 `sort.prop / sort.order` 即为后端入参
 
 ## 11. 推荐 Prompt
 
@@ -485,11 +504,12 @@ AI 生成页面时，建议至少覆盖下列功能点：
 请生成 Vue2.7 + script setup 的 NsTableContainer 页面，要求：
 1) searchItems 覆盖 ElInput、ElSelect、ElDatePicker、slot 项、defaultValue；
 2) columns 覆盖普通文本列、children 分组列、image、link、tag、自定义 slot、headerSlot、action；
-3) 监听 search、reset、add、selection-change、sort-change、row-click、size-change、current-change、page-change、link-click；
-4) 提供 rowKey，并演示 getSelectionKeys、setSelectionKeys、isKeySelected；
-5) 提供 actions-after-reset、header-actions、empty 插槽示例；
-6) 如使用 slotRenderers，按当前项目的 (scope) => VNode 签名实现；
-7) 不使用 TS，不虚构不存在的 props 或方法。
+3) 仅监听 search、reset、add、selection-change、link-click 这五个事件即可；
+4) 数据加载只通过 @search 事件触发，事件参数中含搜索值、分页（pageNumberKey / pageSizeKey）以及 sort 对象；
+5) 提供 rowKey，并演示 getSelectionKeys、setSelectionKeys、isKeySelected；
+6) 提供 actions-after-reset、header-actions、empty 插槽示例；
+7) 如使用 slotRenderers，按当前项目的 (scope) => VNode 签名实现；
+8) 不使用 TS，不虚构不存在的 props 或方法（例如不要使用已不存在的 :load-data，不要在 useDefaultPage=true 模式下绑定 currentPage.sync / pageSize.sync）。
 ```
 
 ## 12. 标准模板
@@ -515,8 +535,7 @@ AI 生成页面时，建议至少覆盖下列功能点：
       stripe: true,
       paginationLayout: 'total, sizes, prev, pager, next',
     }"
-    :load-data="fetchData"
-    @search="onSearch"
+    @search="fetchData"
     @reset="onReset"
     @add="onAdd"
     @selection-change="onSelectionChange"
@@ -574,7 +593,7 @@ const columns = ref([
   { prop: 'name', label: '名称', minWidth: 160, type: 'link' },
   { prop: 'code', label: '编码', width: 120 },
   { prop: 'status', label: '状态', width: 100, slot: 'status' },
-  { prop: 'createTime', label: '创建时间', width: 180, sortable: true },
+  { prop: 'createTime', label: '创建时间', width: 180, sortable: 'custom' },
   {
     type: 'action',
     label: '操作',
@@ -595,20 +614,20 @@ const columns = ref([
   },
 ])
 
-const fetchData = async () => {
-  const searchParams = tableRef.value.getSearchFormData()
-  const pagination = tableRef.value.getPagination()
-  console.log({ ...searchParams, ...pagination })
+// @search 事件参数 query 已包含搜索表单值 + 分页参数 + 排序信息
+const fetchData = async (query) => {
+  console.log('请求体：', query)
+
+  // 真实场景：将 query 直接发给后端
+  // const res = await api.list(query)
+  // tableData.value = res.data
+  // total.value = res.totalCount
 
   tableData.value = [
     { id: 1, name: '项目一', code: 'P001', status: 1, createTime: '2026-01-01' },
     { id: 2, name: '项目二', code: 'P002', status: 0, createTime: '2026-01-02' },
   ]
   total.value = 2
-}
-
-const onSearch = () => {
-  fetchData()
 }
 
 const onReset = () => {

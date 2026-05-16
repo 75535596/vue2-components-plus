@@ -20,6 +20,7 @@
       :total="total"
       :current-page="currentPageModel"
       :page-size="pageSizeModel"
+      :use-default-page="useDefaultPage"
       :page-number-key="pageNumberKey"
       :page-size-key="pageSizeKey"
       :page-total-key="pageTotalKey"
@@ -108,25 +109,36 @@ export default {
       type: Object,
       default: () => ({}),
     },
-    loadData: {
-      type: Function,
-      default: null,
+    useDefaultPage: {
+      type: Boolean,
+      default: true,
     },
   },
   data() {
     return {
       internalPagination: createPagination(),
+      internalSearchParams: {},
+      internalSortState: { prop: '', order: '' },
       pendingSelectionKeys: new Set(),
       selectionRowMap: {},
       isSyncingSelection: false,
+      _emitSearchTimer: null,
+    }
+  },
+  beforeDestroy() {
+    if (this._emitSearchTimer) {
+      clearTimeout(this._emitSearchTimer)
+      this._emitSearchTimer = null
     }
   },
 
   computed: {
     currentPageModel() {
+      if (this.useDefaultPage) return this.internalPagination.currentPage
       return this.currentPage === null ? this.internalPagination.currentPage : this.currentPage
     },
     pageSizeModel() {
+      if (this.useDefaultPage) return this.internalPagination.pageSize
       return this.pageSize === null ? this.internalPagination.pageSize : this.pageSize
     },
     currentRowKey() {
@@ -136,6 +148,7 @@ export default {
   watch: {
     currentPage: {
       handler(value) {
+        if (this.useDefaultPage) return
         if (value !== null) {
           this.internalPagination.currentPage = value
         }
@@ -144,6 +157,7 @@ export default {
     },
     pageSize: {
       handler(value) {
+        if (this.useDefaultPage) return
         if (value !== null) {
           this.internalPagination.pageSize = value
         }
@@ -190,14 +204,17 @@ export default {
 
     handleSearch(params) {
       this.resetSelectionState()
+      let nextParams = params || {}
       if (params && params._resetPage) {
         const { _resetPage, ...searchParams } = params
+        nextParams = searchParams
         this.internalPagination.currentPage = 1
-        this.$emit('update:currentPage', 1)
-        this.$emit('search', searchParams)
-        return
+        if (!this.useDefaultPage) {
+          this.$emit('update:currentPage', 1)
+        }
       }
-      this.$emit('search', params)
+      this.internalSearchParams = { ...nextParams }
+      this.emitSearch()
     },
     handleReset() {
       this.resetSelectionState()
@@ -208,27 +225,35 @@ export default {
     },
     handleSizeChange(size) {
       this.internalPagination.pageSize = size
-      this.$emit('update:pageSize', size)
+      const maxPage = Math.max(1, Math.ceil((this.total || 0) / size))
+      if (this.internalPagination.currentPage > maxPage) {
+        this.internalPagination.currentPage = maxPage
+      }
+      if (!this.useDefaultPage) {
+        this.$emit('update:pageSize', size)
+        this.$emit('update:currentPage', this.internalPagination.currentPage)
+      }
       this.$emit('size-change', size)
       this.$emit('page-change', {
-        currentPage: this.currentPageModel,
+        currentPage: this.internalPagination.currentPage,
         pageSize: size,
       })
-      if (this.loadData) {
-        this.loadData()
-      }
+      this.emitSearch()
     },
     handleCurrentChange(page) {
+      if (this.internalPagination.currentPage === page) {
+        return
+      }
       this.internalPagination.currentPage = page
-      this.$emit('update:currentPage', page)
+      if (!this.useDefaultPage) {
+        this.$emit('update:currentPage', page)
+      }
       this.$emit('current-change', page)
       this.$emit('page-change', {
         currentPage: page,
         pageSize: this.pageSizeModel,
       })
-      if (this.loadData) {
-        this.loadData()
-      }
+      this.emitSearch()
     },
     handleSelectionChange(selection) {
       if (this.isSyncingSelection) {
@@ -252,7 +277,9 @@ export default {
     },
 
     handleSortChange(sort) {
+      this.internalSortState = sort || { prop: '', order: '' }
       this.$emit('sort-change', sort)
+      this.emitSearch()
     },
     handleRowClick(row, column, event) {
       this.$emit('row-click', row, column, event)
@@ -260,15 +287,33 @@ export default {
     handleLinkClick(row, column) {
       this.$emit('link-click', row, column)
     },
+    buildLoadQuery() {
+      return {
+        ...this.internalSearchParams,
+        [this.pageNumberKey]: this.currentPageModel,
+        [this.pageSizeKey]: this.pageSizeModel,
+        sort: { ...this.internalSortState },
+      }
+    },
+    emitSearch() {
+      if (this._emitSearchTimer) {
+        clearTimeout(this._emitSearchTimer)
+      }
+      this._emitSearchTimer = setTimeout(() => {
+        this._emitSearchTimer = null
+        this.$emit('search', this.buildLoadQuery())
+      }, 0)
+    },
+    reload() {
+      this.emitSearch()
+    },
     initSearchAndLoad() {
       this.$nextTick(() => {
         if (this.showSearch && this.$refs.searchRef) {
-          this.$emit('search', this.$refs.searchRef.getFormData())
-          return
+          const formData = this.$refs.searchRef.getFormData()
+          this.internalSearchParams = { ...formData }
         }
-        if (this.loadData) {
-          this.loadData()
-        }
+        this.emitSearch()
       })
     },
     getSearchFormData() {

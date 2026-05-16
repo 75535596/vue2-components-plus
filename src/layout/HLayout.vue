@@ -15,6 +15,10 @@
           <i class="el-icon-s-grid"></i>
           <span slot="title">NsTable（setup）</span>
         </el-menu-item>
+        <el-menu-item index="/captcha-table-demo">
+          <i class="el-icon-picture-outline"></i>
+          <span slot="title">NsTable（真实接口）</span>
+        </el-menu-item>
         <el-menu-item index="/dialog-demo">
           <i class="el-icon-copy-document"></i>
           <span slot="title">NsDialog（setup）</span>
@@ -48,6 +52,7 @@
 import DialogDemo from '@/views/DialogDemo.vue'
 import FormDemo from '@/views/FormDemo.vue'
 import TableDemo from '@/views/TableDemo.vue'
+import CaptchaTableDemo from '@/views/CaptchaTableDemo.vue'
 import DirectivesDemo from '@/views/DirectivesDemo.vue'
 
 
@@ -60,6 +65,10 @@ const pageMap = {
   '/table-demo': {
     title: 'NsTable 表格与搜索示例（<script setup>）',
     component: TableDemo,
+  },
+  '/captcha-table-demo': {
+    title: 'NsTable 真实接口示例（captchaImage）',
+    component: CaptchaTableDemo,
   },
   '/dialog-demo': {
     title: 'NsDialog 弹窗示例（<script setup>）',

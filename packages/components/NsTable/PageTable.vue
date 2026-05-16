@@ -180,6 +180,10 @@ export default {
       type: Number,
       default: null,
     },
+    useDefaultPage: {
+      type: Boolean,
+      default: true,
+    },
     pageSizes: {
       type: Array,
       default: () => [10, 20, 50, 100],
@@ -274,12 +278,16 @@ export default {
     },
     handleSizeChange(size) {
       this.internalPagination.pageSize = size
-      this.$emit('update:pageSize', size)
+      if (!this.useDefaultPage) {
+        this.$emit('update:pageSize', size)
+      }
       this.$emit('size-change', size)
     },
     handleCurrentChange(page) {
       this.internalPagination.currentPage = page
-      this.$emit('update:currentPage', page)
+      if (!this.useDefaultPage) {
+        this.$emit('update:currentPage', page)
+      }
       this.$emit('current-change', page)
     },
     handleLinkClick(row, column) {
@@ -362,15 +370,21 @@ export default {
     },
     resetPage() {
       this.internalPagination.currentPage = 1
-      this.$emit('update:currentPage', 1)
+      if (!this.useDefaultPage) {
+        this.$emit('update:currentPage', 1)
+      }
     },
     setPage(page) {
       this.internalPagination.currentPage = page
-      this.$emit('update:currentPage', page)
+      if (!this.useDefaultPage) {
+        this.$emit('update:currentPage', page)
+      }
     },
     setPageSize(size) {
       this.internalPagination.pageSize = size
-      this.$emit('update:pageSize', size)
+      if (!this.useDefaultPage) {
+        this.$emit('update:pageSize', size)
+      }
     },
     getPagination() {
       return {
