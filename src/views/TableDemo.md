@@ -96,6 +96,8 @@
 |---|---|
 | `initSearchAndLoad()` | 初始化查询；优先读取搜索表单数据后派发 `search` 事件 |
 | `reload()` | 以当前搜索条件 + 分页 + 排序重新派发 `search` 事件 |
+| `refresh(isFirstPage = true)` | 重新派发 `search` 事件刷新数据；`isFirstPage=true`（默认）时会把页码重置为 `1`，传 `false` 则保持当前页（等同 `reload()`） |
+| `getSearchParams()` | 获取与 `@search` 事件参数同形的 payload（合并搜索值 + 分页 + 排序），可直接用于手动发请求 |
 | `getSearchFormData()` | 读取搜索表单 |
 | `setSearchFormData(data)` | 回填搜索表单 |
 | `resetSearchForm()` | 重置搜索表单 |
@@ -109,6 +111,16 @@
 | `selectAll()` | 全选当前页 |
 | `isRowSelected(row)` | 判断某行是否选中 |
 | `isKeySelected(key)` | 判断某 key 是否选中 |
+
+> 用法示例：
+> ```js
+> // 拿到与 @search 同形的 payload，自行发请求
+> const params = this.$refs.tableRef.getSearchParams()
+> // { ...搜索表单值, [pageNumberKey]: 1, [pageSizeKey]: 10, sort: { prop, order } }
+>
+> // 刷新当前列表（保持搜索条件 / 分页 / 排序不变）
+> this.$refs.tableRef.refresh()
+> ```
 
 ### 3.5 插槽
 

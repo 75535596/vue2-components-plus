@@ -203,6 +203,8 @@
         <el-button @click="checkSelection">检查选择状态</el-button>
         <el-button @click="setSearchForm">回填搜索条件</el-button>
         <el-button @click="resetSearchForm">重置搜索表单</el-button>
+        <el-button type="primary" @click="showSearchParams">获取请求参数</el-button>
+        <el-button type="success" @click="refreshTable">刷新</el-button>
       </div>
     </el-card>
 
@@ -591,6 +593,20 @@ function resetSearchForm() {
   if (!containerRef.value) return
   containerRef.value.resetSearchForm()
   proxy.$message.success('已重置搜索表单')
+}
+
+function showSearchParams() {
+  if (!containerRef.value || !containerRef.value.getSearchParams) return
+  const params = containerRef.value.getSearchParams()
+  proxy.$alert(JSON.stringify(params, null, 2), '当前请求参数（getSearchParams）', {
+    confirmButtonText: '知道了',
+  })
+}
+
+function refreshTable() {
+  if (!containerRef.value || !containerRef.value.refresh) return
+  containerRef.value.refresh()
+  proxy.$message.success('已触发刷新')
 }
 
 function reloadWithMessage() {

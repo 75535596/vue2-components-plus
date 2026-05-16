@@ -307,6 +307,18 @@ export default {
     reload() {
       this.emitSearch()
     },
+    refresh(isFirstPage = true) {
+      if (isFirstPage) {
+        this.internalPagination.currentPage = 1
+        if (!this.useDefaultPage) {
+          this.$emit('update:currentPage', 1)
+        }
+      }
+      this.emitSearch()
+    },
+    getSearchParams() {
+      return this.buildLoadQuery()
+    },
     initSearchAndLoad() {
       this.$nextTick(() => {
         if (this.showSearch && this.$refs.searchRef) {
